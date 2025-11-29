@@ -44,9 +44,15 @@ public class DroneMotor : MonoBehaviour, IMotor
             return;
         }
 
+        // Don't rotate propellers if the drone is not armed
+        if(!PX4StateManager.Instance.IsArmed)
+        {
+            return;
+        }
+
         // Calculate rotation speed based on throttle
         float currentRotationSpeed = Mathf.Lerp(baseRotationSpeed, maxRotationSpeed, throttle);
-        
+
         // Apply rotation direction based on isClockwise property
         float direction = isClockwise ? 1f : -1f;
         propeller.Rotate(Vector3.up, currentRotationSpeed * direction);

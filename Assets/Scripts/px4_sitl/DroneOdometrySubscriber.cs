@@ -45,10 +45,6 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
     [Tooltip("Higher values = faster response but more jitter. Lower values = smoother but more lag.")]
     private float rotationSmoothingFactor = 0.1f;
 
-    [SerializeField]
-    [Tooltip("Enable debug logging to track rotation updates")]
-    private bool debugRotation = false;
-
     [Header("ROS Topic Configuration")]
     [SerializeField]
     private string topicPath = "/fmu/out/vehicle_odometry";
@@ -138,17 +134,7 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
                             // Exponential moving average (low-pass filter)
                             smoothedPosition = Vector3.Lerp(smoothedPosition, newPosition, positionSmoothingFactor);
 
-                            if (debugRotation)
-                            {
-                                Debug.Log($"Before Slerp - Current: {smoothedRotation.eulerAngles.y:F1}°, Target: {newRotation.eulerAngles.y:F1}°");
-                            }
-
                             smoothedRotation = Quaternion.Slerp(smoothedRotation, newRotation, rotationSmoothingFactor);
-
-                            if (debugRotation)
-                            {
-                                Debug.Log($"After Slerp - Result: {smoothedRotation.eulerAngles.y:F1}°");
-                            }
                         }
 
                         // Update the drone's transform with smoothed values
