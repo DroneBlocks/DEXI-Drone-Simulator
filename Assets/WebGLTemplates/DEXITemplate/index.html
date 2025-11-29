@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{{ PRODUCT_NAME }}}</title>
+    <script src="https://cdn.jsdelivr.net/npm/roslib@1/build/roslib.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Unity Canvas Container */
+        .unity-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #unity-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Virtual Joystick Panel */
+        .control-panel {
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-y: auto;
+        }
+
+        .panel-section {
+            background: #333;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .panel-section h3 {
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #888;
+        }
+
+        /* Connection Status */
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #f44336;
+        }
+
+        .status-dot.connected {
+            background: #4caf50;
+        }
+
+        /* Virtual Joystick Display */
+        .joystick-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .axis-control {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .axis-label {
+            font-size: 12px;
+            color: #aaa;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .axis-value {
+            color: #4caf50;
+            font-weight: bold;
+        }
+
+        .axis-bar {
+            height: 30px;
+            background: #1a1a1a;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .axis-bar-fill {
+            position: absolute;
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            transition: width 0.05s ease;
+        }
+
+        .axis-bar-center {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #666;
+        }
+
+        /* Keyboard Help */
+        .keyboard-help {
+            font-size: 12px;
+            line-height: 1.6;
+            color: #aaa;
+        }
+
+        .key {
+            display: inline-block;
+            background: #1a1a1a;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #4caf50;
+            border: 1px solid #444;
+        }
+
+        /* Button */
+        .btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #45a049;
+        }
+
+        .btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        /* Loading overlay */
+        #loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            z-index: 100;
+        }
+
+        #loading-overlay.hidden {
+            display: none;
+        }
+
+        .progress-bar {
+            width: 300px;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: #4caf50;
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Unity WebGL Container -->
+        <div class="unity-container">
+            <canvas id="unity-canvas" tabindex="-1"></canvas>
+            <div id="loading-overlay">
+                <div style="text-align: center;">
+                    <div>Loading Unity...</div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" id="progress-bar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Virtual Joystick Control Panel -->
+        <div class="control-panel">
+            <!-- Connection Status -->
+            <div class="panel-section">
+                <h3>ROS Bridge Connection</h3>
+                <div class="status">
+                    <div class="status-dot" id="status-dot"></div>
+                    <span id="status-text">Disconnected</span>
+                </div>
+                <button class="btn" id="connect-btn" style="margin-top: 10px; width: 100%;">Connect to ROS</button>
+            </div>
+
+            <!-- Virtual Joystick Display -->
+            <div class="panel-section">
+                <h3>Virtual Joystick</h3>
+                <div class="joystick-display">
+                    <div class="axis-control">
+                        <div class="axis-label">
+                            <span>Roll (Y)</span>
+                            <span class="axis-value" id="roll-value">0.00</span>
+                        </div>
+                        <div class="axis-bar">
+                            <div class="axis-bar-center"></div>
+                            <div class="axis-bar-fill" id="roll-bar"></div>
+                        </div>
+                    </div>
+
+                    <div class="axis-control">
+                        <div class="axis-label">
+                            <span>Pitch (X)</span>
+                            <span class="axis-value" id="pitch-value">0.00</span>
+                        </div>
+                        <div class="axis-bar">
+                            <div class="axis-bar-center"></div>
+                            <div class="axis-bar-fill" id="pitch-bar"></div>
+                        </div>
+                    </div>
+
+                    <div class="axis-control">
+                        <div class="axis-label">
+                            <span>Yaw (R)</span>
+                            <span class="axis-value" id="yaw-value">0.00</span>
+                        </div>
+                        <div class="axis-bar">
+                            <div class="axis-bar-center"></div>
+                            <div class="axis-bar-fill" id="yaw-bar"></div>
+                        </div>
+                    </div>
+
+                    <div class="axis-control">
+                        <div class="axis-label">
+                            <span>Throttle (Z)</span>
+                            <span class="axis-value" id="throttle-value">0.00</span>
+                        </div>
+                        <div class="axis-bar">
+                            <div class="axis-bar-center"></div>
+                            <div class="axis-bar-fill" id="throttle-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Keyboard Controls Help -->
+            <div class="panel-section">
+                <h3>Keyboard Controls</h3>
+                <div class="keyboard-help">
+                    <strong>Movement:</strong><br>
+                    <span class="key">W</span> Pitch Forward<br>
+                    <span class="key">S</span> Pitch Backward<br>
+                    <span class="key">A</span> Roll Left<br>
+                    <span class="key">D</span> Roll Right<br>
+                    <br>
+                    <strong>Altitude:</strong><br>
+                    <span class="key">Shift</span> Throttle Up<br>
+                    <span class="key">Ctrl</span> Throttle Down<br>
+                    <br>
+                    <strong>Rotation:</strong><br>
+                    <span class="key">←</span> Yaw Left<br>
+                    <span class="key">→</span> Yaw Right<br>
+                    <br>
+                    <strong>Reset:</strong><br>
+                    <span class="key">Space</span> Center All Axes
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Virtual Joystick State
+        const joystick = {
+            x: 0.0,  // Pitch
+            y: 0.0,  // Roll
+            z: 0.0,  // Throttle
+            r: 0.0   // Yaw
+        };
+
+        // Keyboard state tracking
+        const keys = {};
+
+        // ROS connection
+        let ros = null;
+        let manualControlPub = null;
+        let isConnected = false;
+
+        // ROS Bridge URL - check for URL parameter, otherwise use default
+        function getRosBridgeUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const rosbridgeParam = urlParams.get('rosbridge');
+            if (rosbridgeParam) {
+                return rosbridgeParam;
+            }
+            // Use window.location.hostname to automatically connect to same host
+            return 'ws://' + window.location.hostname + ':9090';
+        }
+
+        const rosBridgeUrl = getRosBridgeUrl();
+        console.log('ROS Bridge URL:', rosBridgeUrl);
+
+        // Connect to ROS Bridge
+        function connectToROS() {
+            if (ros && isConnected) {
+                console.log('Already connected');
+                return;
+            }
+
+            ros = new ROSLIB.Ros({
+                url: rosBridgeUrl
+            });
+
+            ros.on('connection', () => {
+                console.log('Connected to rosbridge');
+                isConnected = true;
+                updateConnectionStatus(true);
+
+                // Create publisher for manual control
+                manualControlPub = new ROSLIB.Topic({
+                    ros: ros,
+                    name: '/fmu/in/manual_control_setpoint',
+                    messageType: 'px4_msgs/msg/ManualControlSetpoint'
+                });
+
+                console.log('Publisher created for /fmu/in/manual_control_setpoint');
+            });
+
+            ros.on('error', (error) => {
+                console.error('ROS connection error:', error);
+                isConnected = false;
+                updateConnectionStatus(false);
+            });
+
+            ros.on('close', () => {
+                console.log('ROS connection closed');
+                isConnected = false;
+                updateConnectionStatus(false);
+            });
+        }
+
+        // Update connection status UI
+        function updateConnectionStatus(connected) {
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            const connectBtn = document.getElementById('connect-btn');
+
+            if (connected) {
+                statusDot.classList.add('connected');
+                statusText.textContent = 'Connected';
+                connectBtn.textContent = 'Connected to ROS';
+                connectBtn.disabled = true;
+            } else {
+                statusDot.classList.remove('connected');
+                statusText.textContent = 'Disconnected';
+                connectBtn.textContent = 'Connect to ROS';
+                connectBtn.disabled = false;
+            }
+        }
+
+        // Publish manual control setpoint
+        function publishManualControl() {
+            if (!isConnected || !manualControlPub) return;
+
+            const msg = new ROSLIB.Message({
+                timestamp: Date.now() * 1000, // Convert to microseconds
+                x: joystick.x,      // Pitch
+                y: joystick.y,      // Roll
+                z: joystick.z,      // Throttle
+                r: joystick.r,      // Yaw
+                data_source: 1,     // RC
+                valid: true
+            });
+
+            manualControlPub.publish(msg);
+        }
+
+        // Update virtual joystick from keyboard input
+        function updateJoystickFromKeyboard() {
+            const sensitivity = 0.02; // How fast values change
+            const deadzone = 0.05;    // Minimum value threshold
+
+            // Pitch (X axis) - W/S keys
+            if (keys['w'] || keys['W']) {
+                joystick.x = Math.min(1.0, joystick.x + sensitivity);
+            } else if (keys['s'] || keys['S']) {
+                joystick.x = Math.max(-1.0, joystick.x - sensitivity);
+            } else {
+                // Decay to center
+                if (Math.abs(joystick.x) < deadzone) {
+                    joystick.x = 0;
+                } else {
+                    joystick.x *= 0.9;
+                }
+            }
+
+            // Roll (Y axis) - A/D keys
+            if (keys['a'] || keys['A']) {
+                joystick.y = Math.max(-1.0, joystick.y - sensitivity);
+            } else if (keys['d'] || keys['D']) {
+                joystick.y = Math.min(1.0, joystick.y + sensitivity);
+            } else {
+                // Decay to center
+                if (Math.abs(joystick.y) < deadzone) {
+                    joystick.y = 0;
+                } else {
+                    joystick.y *= 0.9;
+                }
+            }
+
+            // Throttle (Z axis) - Shift/Ctrl keys
+            if (keys['Shift']) {
+                joystick.z = Math.min(1.0, joystick.z + sensitivity);
+            } else if (keys['Control']) {
+                joystick.z = Math.max(-1.0, joystick.z - sensitivity);
+            } else {
+                // Decay to center
+                if (Math.abs(joystick.z) < deadzone) {
+                    joystick.z = 0;
+                } else {
+                    joystick.z *= 0.9;
+                }
+            }
+
+            // Yaw (R axis) - Arrow Left/Right
+            if (keys['ArrowLeft']) {
+                joystick.r = Math.max(-1.0, joystick.r - sensitivity);
+            } else if (keys['ArrowRight']) {
+                joystick.r = Math.min(1.0, joystick.r + sensitivity);
+            } else {
+                // Decay to center
+                if (Math.abs(joystick.r) < deadzone) {
+                    joystick.r = 0;
+                } else {
+                    joystick.r *= 0.9;
+                }
+            }
+
+            // Reset all on spacebar
+            if (keys[' ']) {
+                joystick.x = 0;
+                joystick.y = 0;
+                joystick.z = 0;
+                joystick.r = 0;
+            }
+        }
+
+        // Update UI to show current joystick values
+        function updateJoystickDisplay() {
+            // Update text values
+            document.getElementById('pitch-value').textContent = joystick.x.toFixed(2);
+            document.getElementById('roll-value').textContent = joystick.y.toFixed(2);
+            document.getElementById('throttle-value').textContent = joystick.z.toFixed(2);
+            document.getElementById('yaw-value').textContent = joystick.r.toFixed(2);
+
+            // Update visual bars (convert -1 to 1 range to 0-100%)
+            const pitchPercent = ((joystick.x + 1) / 2) * 100;
+            const rollPercent = ((joystick.y + 1) / 2) * 100;
+            const throttlePercent = ((joystick.z + 1) / 2) * 100;
+            const yawPercent = ((joystick.r + 1) / 2) * 100;
+
+            document.getElementById('pitch-bar').style.width = pitchPercent + '%';
+            document.getElementById('roll-bar').style.width = rollPercent + '%';
+            document.getElementById('throttle-bar').style.width = throttlePercent + '%';
+            document.getElementById('yaw-bar').style.width = yawPercent + '%';
+        }
+
+        // Main update loop
+        function mainLoop() {
+            updateJoystickFromKeyboard();
+            updateJoystickDisplay();
+            publishManualControl();
+            requestAnimationFrame(mainLoop);
+        }
+
+        // Keyboard event listeners
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            // Prevent default for arrow keys and space to avoid page scrolling
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Connect button
+        document.getElementById('connect-btn').addEventListener('click', connectToROS);
+
+        // Start main loop
+        mainLoop();
+
+        // Load Unity WebGL using template variables
+        var buildUrl = "Build";
+        var loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
+        var config = {
+            dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
+            frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+            codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+#if MEMORY_FILENAME
+            memoryUrl: buildUrl + "/{{{ MEMORY_FILENAME }}}",
+#endif
+#if SYMBOLS_FILENAME
+            symbolsUrl: buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
+#endif
+            streamingAssetsUrl: "StreamingAssets",
+            companyName: "{{{ COMPANY_NAME }}}",
+            productName: "{{{ PRODUCT_NAME }}}",
+            productVersion: "{{{ PRODUCT_VERSION }}}",
+        };
+
+        var canvas = document.querySelector("#unity-canvas");
+        var loadingOverlay = document.querySelector("#loading-overlay");
+        var progressBarFill = document.querySelector("#progress-bar");
+
+        var script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => {
+            createUnityInstance(canvas, config, (progress) => {
+                progressBarFill.style.width = 100 * progress + "%";
+            }).then((unityInstance) => {
+                loadingOverlay.classList.add("hidden");
+                console.log("Unity loaded successfully");
+            }).catch((message) => {
+                alert(message);
+            });
+        };
+        document.body.appendChild(script);
+    </script>
+</body>
+</html>
