@@ -79,23 +79,26 @@ public class LEDRingVisualizer : MonoBehaviour
         ledRenderers.Clear();
         ledLights.Clear();
 
-        // Create material for LEDs using Unlit shader for consistent brightness
-        // Try URP Unlit first for better WebGL performance
-        Shader ledShader = Shader.Find("Universal Render Pipeline/Unlit");
+        // Create material for LEDs - try URP Lit shader first (supports emission)
+        Shader ledShader = Shader.Find("Universal Render Pipeline/Lit");
+
         if (ledShader == null)
         {
-            ledShader = Shader.Find("Unlit/Color"); // Fallback for Built-in RP
+            // Fallback to URP Unlit
+            ledShader = Shader.Find("Universal Render Pipeline/Unlit");
         }
 
         if (ledShader == null)
         {
-            Debug.LogError("Could not find Unlit shader for LEDs. Using default.");
-            ledMaterial = new Material(Shader.Find("Diffuse"));
+            // Last resort - built-in Standard for non-URP projects
+            ledShader = Shader.Find("Standard");
         }
-        else
-        {
-            ledMaterial = new Material(ledShader);
-        }
+
+        ledMaterial = new Material(ledShader);
+
+        // Make it emissive so it glows without needing external lights
+        ledMaterial.EnableKeyword("_EMISSION");
+        ledMaterial.SetFloat("_Surface", 0); // 0 = Opaque
 
         // Create LED objects in a ring
         for (int i = 0; i < ledCount; i++)
@@ -137,8 +140,6 @@ public class LEDRingVisualizer : MonoBehaviour
 
             ledObjects.Add(led);
         }
-
-        Debug.Log($"Created LED ring with {ledCount} LEDs at radius {ringRadius}m");
 
         // Set default color
         SetAllLEDsToDefault();
@@ -192,14 +193,9 @@ public class LEDRingVisualizer : MonoBehaviour
         // Update renderer color
         Renderer renderer = ledRenderers[index];
 
-        // Set base color for Unlit shader (supports both URP and Built-in)
+        // Set color and emission for Standard shader
         renderer.material.color = color;
-
-        // Also set _BaseColor for URP Unlit shader
-        if (renderer.material.HasProperty("_BaseColor"))
-        {
-            renderer.material.SetColor("_BaseColor", color);
-        }
+        renderer.material.SetColor("_EmissionColor", color);
 
         // Update light if enabled
         if (enableLights && index < ledLights.Count)
