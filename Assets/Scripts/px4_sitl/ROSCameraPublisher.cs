@@ -432,10 +432,19 @@ public class ROSCameraPublisher : MonoBehaviour
 
     private void OnGUI()
     {
-        // Publish button
-        if (showPublishButton && GUI.Button(new Rect(10, 50, 200, 30), "Publish Camera Image"))
+        // Toggle auto-publish button
+        if (showPublishButton)
         {
-            PublishCameraImage();
+            string buttonText = autoPublish ? "Stop Publishing" : "Start Publishing";
+            Color buttonColor = autoPublish ? new Color(1f, 0.3f, 0.3f) : new Color(0.3f, 1f, 0.3f);
+
+            GUI.backgroundColor = buttonColor;
+            if (GUI.Button(new Rect(10, 50, 200, 30), buttonText))
+            {
+                autoPublish = !autoPublish;
+                Debug.Log($"Camera auto-publish {(autoPublish ? "started" : "stopped")}");
+            }
+            GUI.backgroundColor = Color.white;
         }
 
         // FPS display in bottom right corner
