@@ -52,9 +52,16 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
     [SerializeField]
     private string messageType = "px4_msgs/msg/VehicleOdometry";
 
-    private Vector3 smoothedPosition;
-    private Quaternion smoothedRotation = Quaternion.identity;
+    // Target values received from ROS
+    private Vector3 targetPosition;
+    private Quaternion targetRotation = Quaternion.identity;
+    
+    // Current smoothed values
+    private Vector3 currentSmoothedPosition;
+    private Quaternion currentSmoothedRotation = Quaternion.identity;
+    
     private bool isFirstUpdate = true;
+    private bool hasReceivedData = false;
 
     // IROSSubscriber implementation
     public string TopicPath => topicPath;
@@ -72,6 +79,58 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
         ROSBridgeManager.Instance.UnregisterSubscriber(this);
     }
 
+    private void Update()
+    {
+        if (!hasReceivedData) return;
+
+        if (enableSmoothing)
+        {
+            if (isFirstUpdate)
+            {
+                // Initialize smoothed values on first update
+                currentSmoothedPosition = targetPosition;
+                currentSmoothedRotation = targetRotation;
+                isFirstUpdate = false;
+            }
+            else
+            {
+                // Frame-rate independent smoothing
+                // Adjust factor to be relative to a reference frame rate (e.g., 60 FPS) to maintain similar "feel" to previous setup
+                // or just treat the factor as a speed. 
+                // Using the Lerp time adjustment formula: t_adjusted = 1 - Pow(1 - factor, dt * 60)
+                
+                float posT = 1.0f - Mathf.Pow(1.0f - positionSmoothingFactor, Time.deltaTime * 60.0f);
+                float rotT = 1.0f - Mathf.Pow(1.0f - rotationSmoothingFactor, Time.deltaTime * 60.0f);
+
+                currentSmoothedPosition = Vector3.Lerp(currentSmoothedPosition, targetPosition, posT);
+                currentSmoothedRotation = Quaternion.Slerp(currentSmoothedRotation, targetRotation, rotT);
+            }
+
+            ApplyTransform(currentSmoothedPosition, currentSmoothedRotation);
+        }
+        else
+        {
+            // Direct update
+            ApplyTransform(targetPosition, targetRotation);
+        }
+    }
+
+    private void ApplyTransform(Vector3 pos, Quaternion rot)
+    {
+        if (droneTransform == null) return;
+
+        if (useLocalPosition)
+        {
+            droneTransform.localPosition = pos;
+            droneTransform.localRotation = rot;
+        }
+        else
+        {
+            droneTransform.position = pos;
+            droneTransform.rotation = rot;
+        }
+    }
+
     public void OnMessageReceived(string message)
     {
         try
@@ -79,9 +138,9 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
             // Parse the VehicleOdometry message
             var odometry = JsonConvert.DeserializeObject<VehicleOdometry>(message);
 
-            if (odometry != null && droneTransform != null)
+            if (odometry != null)
             {
-                // Update position
+                // Parse Position
                 // PX4: NED (North-East-Down) to Unity: Right-Up-Forward
                 Vector3 newPosition = new Vector3(
                     odometry.position[1],  // East -> X (Right)
@@ -92,7 +151,7 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
                 // Apply position offset
                 newPosition += positionOffset;
 
-                // Check if quaternion is valid
+                // Parse Rotation
                 if (!float.IsNaN(odometry.q[0]))
                 {
                     // Convert from PX4 NED frame to Unity's coordinate system
@@ -106,75 +165,25 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
                     // Normalize the quaternion to ensure it's valid
                     px4Rotation.Normalize();
 
-                    // Apply coordinate system alignment
-                    Quaternion newRotation = px4Rotation;
+                    // Apply coordinate system alignment and offset
+                    Quaternion newRotation = px4Rotation * Quaternion.Euler(rotationOffset);
 
-                    // Apply rotation offset
-                    newRotation *= Quaternion.Euler(rotationOffset);
-
-                    // Apply smoothing if enabled
-                    if (enableSmoothing)
+                    // Check for quaternion flip (shortest path continuity)
+                    // We check against the LATEST TARGET, not the smoothed value, to ensure continuity in the target stream
+                    if (hasReceivedData && Quaternion.Dot(targetRotation, newRotation) < 0)
                     {
-                        if (isFirstUpdate)
-                        {
-                            // Initialize smoothed values on first update
-                            smoothedPosition = newPosition;
-                            smoothedRotation = newRotation;
-                            isFirstUpdate = false;
-                        }
-                        else
-                        {
-                            // Fix quaternion discontinuity - ensure we take the shortest path
-                            // If dot product is negative, quaternions represent the same rotation but will slerp the long way
-                            if (Quaternion.Dot(smoothedRotation, newRotation) < 0)
-                            {
-                                newRotation = new Quaternion(-newRotation.x, -newRotation.y, -newRotation.z, -newRotation.w);
-                            }
-
-                            // Exponential moving average (low-pass filter)
-                            smoothedPosition = Vector3.Lerp(smoothedPosition, newPosition, positionSmoothingFactor);
-
-                            smoothedRotation = Quaternion.Slerp(smoothedRotation, newRotation, rotationSmoothingFactor);
-                        }
-
-                        // Update the drone's transform with smoothed values
-                        if (useLocalPosition)
-                        {
-                            droneTransform.localPosition = smoothedPosition;
-                            droneTransform.localRotation = smoothedRotation;
-                        }
-                        else
-                        {
-                            droneTransform.position = smoothedPosition;
-                            droneTransform.rotation = smoothedRotation;
-                        }
+                        newRotation = new Quaternion(-newRotation.x, -newRotation.y, -newRotation.z, -newRotation.w);
                     }
-                    else
-                    {
-                        // Direct update without smoothing
-                        if (useLocalPosition)
-                        {
-                            droneTransform.localPosition = newPosition;
-                            droneTransform.localRotation = newRotation;
-                        }
-                        else
-                        {
-                            droneTransform.position = newPosition;
-                            droneTransform.rotation = newRotation;
-                        }
-                    }
+
+                    // Update targets atomically
+                    targetPosition = newPosition;
+                    targetRotation = newRotation;
+                    hasReceivedData = true;
                 }
                 else
                 {
                     Debug.LogWarning("Received invalid quaternion (NaN)");
                 }
-            }
-            else
-            {
-                if (odometry == null)
-                    Debug.LogError("Failed to parse odometry message");
-                if (droneTransform == null)
-                    Debug.LogError("Drone transform is not assigned!");
             }
         }
         catch (Exception e)
@@ -192,5 +201,6 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
     {
         Debug.Log($"Disconnected from {topicPath}");
         isFirstUpdate = true; // Reset on disconnect
+        hasReceivedData = false;
     }
 }
