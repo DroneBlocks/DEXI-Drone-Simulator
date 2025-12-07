@@ -213,6 +213,7 @@ public class ROSBridgeManager : MonoBehaviour
             await websocket.Close();
             websocket = null;
             isConnected = false;
+            OnDisconnected?.Invoke();
             NotifySubscribersOfDisconnection();
         }
     }
