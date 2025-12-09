@@ -55,6 +55,20 @@ public class ROSBridgeManager : MonoBehaviour
     [Tooltip("Port for ROS bridge when using hostname-based URL construction")]
     private int rosbridge_port = 9090;
 
+    [SerializeField]
+    [Tooltip("Automatically connect to ROS bridge on Start (useful for embedded iframes)")]
+    private bool autoConnectOnStart = false;
+
+    [SerializeField]
+    [Tooltip("Number of connection retry attempts (0 = no retries)")]
+    [Range(0, 10)]
+    private int maxRetryAttempts = 3;
+
+    [SerializeField]
+    [Tooltip("Delay between retry attempts in seconds")]
+    [Range(1f, 10f)]
+    private float retryDelaySeconds = 2f;
+
     [Header("Connection Status")]
     [SerializeField]
     [Tooltip("Current connection status (read-only)")]
@@ -80,6 +94,57 @@ public class ROSBridgeManager : MonoBehaviour
         }
         _instance = this;
         DontDestroyOnLoad(gameObject);
+    }
+
+    private async void Start()
+    {
+        // Auto-connect if enabled
+        if (autoConnectOnStart)
+        {
+            Debug.Log("Auto-connecting to ROS bridge...");
+            await ConnectWithRetry();
+        }
+    }
+
+    /// <summary>
+    /// Connect to ROS Bridge with automatic retry logic
+    /// </summary>
+    private async Task<bool> ConnectWithRetry()
+    {
+        int attempts = 0;
+        int maxAttempts = maxRetryAttempts + 1; // +1 for initial attempt
+
+        while (attempts < maxAttempts)
+        {
+            attempts++;
+
+            if (attempts > 1)
+            {
+                Debug.Log($"Retry attempt {attempts - 1}/{maxRetryAttempts} in {retryDelaySeconds} seconds...");
+                await Task.Delay((int)(retryDelaySeconds * 1000));
+            }
+
+            bool success = await Connect();
+            if (success)
+            {
+                if (attempts > 1)
+                {
+                    Debug.Log($"Successfully connected after {attempts} attempt(s)");
+                }
+                return true;
+            }
+
+            if (attempts < maxAttempts)
+            {
+                Debug.LogWarning($"Connection attempt {attempts} failed");
+            }
+            else
+            {
+                Debug.LogError($"Failed to connect after {attempts} attempt(s)");
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
