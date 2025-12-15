@@ -39,6 +39,9 @@ public class ROSBridgeManager : MonoBehaviour
     private static extern string GetRosBridgeUrlFromQuery();
 
     [DllImport("__Internal")]
+    private static extern string GetNamespaceFromQuery();
+
+    [DllImport("__Internal")]
     private static extern string GetHostname();
 #endif
 
@@ -58,6 +61,11 @@ public class ROSBridgeManager : MonoBehaviour
     [SerializeField]
     [Tooltip("Automatically connect to ROS bridge on Start (useful for embedded iframes)")]
     private bool autoConnectOnStart = false;
+
+    [Header("Namespace Settings")]
+    [SerializeField]
+    [Tooltip("Namespace prefix for topics (e.g., 'dexi1' -> '/dexi1/fmu/...'). Empty = no prefix.")]
+    private string namespacePrefix = "";
 
     [SerializeField]
     [Tooltip("Number of connection retry attempts (0 = no retries)")]
@@ -84,6 +92,34 @@ public class ROSBridgeManager : MonoBehaviour
 
     public bool IsConnected => isConnected;
 
+    /// <summary>
+    /// Gets the namespace prefix for topics.
+    /// If set, topics will be prefixed (e.g., "/dexi1/fmu/out/..." instead of "/fmu/out/...")
+    /// </summary>
+    public string NamespacePrefix => namespacePrefix;
+
+    /// <summary>
+    /// Applies the namespace prefix to a topic path.
+    /// If namespace is empty, returns the original topic.
+    /// Example: ApplyNamespace("/fmu/out/odometry") with namespace "dexi1" returns "/dexi1/fmu/out/odometry"
+    /// </summary>
+    public string ApplyNamespace(string topicPath)
+    {
+        if (string.IsNullOrEmpty(namespacePrefix))
+        {
+            return topicPath;
+        }
+
+        // Ensure topic starts with /
+        if (!topicPath.StartsWith("/"))
+        {
+            topicPath = "/" + topicPath;
+        }
+
+        // Prepend namespace
+        return "/" + namespacePrefix + topicPath;
+    }
+
     private void Awake()
     {
         // Ensure singleton
@@ -94,6 +130,34 @@ public class ROSBridgeManager : MonoBehaviour
         }
         _instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // Initialize namespace from URL parameter (WebGL only)
+        InitializeNamespace();
+    }
+
+    private void InitializeNamespace()
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        try
+        {
+            string nsFromQuery = GetNamespaceFromQuery();
+            if (!string.IsNullOrEmpty(nsFromQuery))
+            {
+                namespacePrefix = nsFromQuery;
+                Debug.Log($"Using namespace from URL parameter: '{namespacePrefix}'");
+            }
+            else
+            {
+                Debug.Log($"No namespace URL parameter found, using default: '{namespacePrefix}'");
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"Failed to get namespace from URL parameter: {e.Message}");
+        }
+#else
+        Debug.Log($"Using editor/standalone namespace: '{namespacePrefix}'");
+#endif
     }
 
     private async void Start()

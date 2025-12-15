@@ -22,14 +22,28 @@ public class VehicleStatusSubscriber : MonoBehaviour, IROSSubscriber
 {
     [Header("ROS Topic Configuration")]
     [SerializeField]
-    [Tooltip("Use /fmu/out/vehicle_status_v1 for PX4 v1.16+ or /fmu/out/vehicle_status for older versions")]
-    private string topicPath = "/fmu/out/vehicle_status_v1";
+    [Tooltip("Base topic path without namespace (namespace is applied automatically from ROSBridgeManager). Use /fmu/out/vehicle_status_v1 for PX4 v1.16+")]
+    private string baseTopicPath = "/fmu/out/vehicle_status_v1";
 
     [SerializeField]
     private string messageType = "px4_msgs/msg/VehicleStatus";
 
+    // Cached namespaced topic path
+    private string _namespacedTopicPath;
+
     // IROSSubscriber implementation
-    public string TopicPath => topicPath;
+    public string TopicPath
+    {
+        get
+        {
+            // Cache the namespaced topic path on first access
+            if (_namespacedTopicPath == null)
+            {
+                _namespacedTopicPath = ROSBridgeManager.Instance.ApplyNamespace(baseTopicPath);
+            }
+            return _namespacedTopicPath;
+        }
+    }
     public string MessageType => messageType;
 
     private void OnEnable()
@@ -71,12 +85,12 @@ public class VehicleStatusSubscriber : MonoBehaviour, IROSSubscriber
 
     public void OnSubscribed()
     {
-        Debug.Log($"Successfully subscribed to {topicPath}");
+        Debug.Log($"Successfully subscribed to {TopicPath}");
     }
 
     public void OnDisconnected()
     {
-        Debug.Log($"Disconnected from {topicPath}");
+        Debug.Log($"Disconnected from {TopicPath}");
         // Reset state to disarmed when disconnected
         PX4StateManager.Instance.ResetState();
     }

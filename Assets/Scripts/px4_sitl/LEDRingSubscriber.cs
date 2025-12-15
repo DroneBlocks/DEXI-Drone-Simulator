@@ -29,13 +29,28 @@ public class LEDRingSubscriber : MonoBehaviour, IROSSubscriber
 
     [Header("ROS Topic Configuration")]
     [SerializeField]
-    private string topicPath = "/dexi/led_state";
+    [Tooltip("Base topic path without namespace (namespace is applied automatically from ROSBridgeManager)")]
+    private string baseTopicPath = "/dexi/led_state";
 
     [SerializeField]
     private string messageType = "dexi_interfaces/msg/LEDStateArray";
 
+    // Cached namespaced topic path
+    private string _namespacedTopicPath;
+
     // IROSSubscriber implementation
-    public string TopicPath => topicPath;
+    public string TopicPath
+    {
+        get
+        {
+            // Cache the namespaced topic path on first access
+            if (_namespacedTopicPath == null)
+            {
+                _namespacedTopicPath = ROSBridgeManager.Instance.ApplyNamespace(baseTopicPath);
+            }
+            return _namespacedTopicPath;
+        }
+    }
     public string MessageType => messageType;
 
     private void OnEnable()
@@ -78,11 +93,11 @@ public class LEDRingSubscriber : MonoBehaviour, IROSSubscriber
 
     public void OnSubscribed()
     {
-        Debug.Log($"Successfully subscribed to {topicPath}");
+        Debug.Log($"Successfully subscribed to {TopicPath}");
     }
 
     public void OnDisconnected()
     {
-        Debug.Log($"Disconnected from {topicPath}");
+        Debug.Log($"Disconnected from {TopicPath}");
     }
 }

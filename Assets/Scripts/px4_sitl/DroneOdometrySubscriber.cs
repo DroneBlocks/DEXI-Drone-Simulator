@@ -47,7 +47,8 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
 
     [Header("ROS Topic Configuration")]
     [SerializeField]
-    private string topicPath = "/fmu/out/vehicle_odometry";
+    [Tooltip("Base topic path without namespace (namespace is applied automatically from ROSBridgeManager)")]
+    private string baseTopicPath = "/fmu/out/vehicle_odometry";
 
     [SerializeField]
     private string messageType = "px4_msgs/msg/VehicleOdometry";
@@ -55,16 +56,30 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
     // Target values received from ROS
     private Vector3 targetPosition;
     private Quaternion targetRotation = Quaternion.identity;
-    
+
     // Current smoothed values
     private Vector3 currentSmoothedPosition;
     private Quaternion currentSmoothedRotation = Quaternion.identity;
-    
+
     private bool isFirstUpdate = true;
     private bool hasReceivedData = false;
 
+    // Cached namespaced topic path
+    private string _namespacedTopicPath;
+
     // IROSSubscriber implementation
-    public string TopicPath => topicPath;
+    public string TopicPath
+    {
+        get
+        {
+            // Cache the namespaced topic path on first access
+            if (_namespacedTopicPath == null)
+            {
+                _namespacedTopicPath = ROSBridgeManager.Instance.ApplyNamespace(baseTopicPath);
+            }
+            return _namespacedTopicPath;
+        }
+    }
     public string MessageType => messageType;
 
     private void OnEnable()
@@ -194,12 +209,12 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
 
     public void OnSubscribed()
     {
-        Debug.Log($"Successfully subscribed to {topicPath}");
+        Debug.Log($"Successfully subscribed to {TopicPath}");
     }
 
     public void OnDisconnected()
     {
-        Debug.Log($"Disconnected from {topicPath}");
+        Debug.Log($"Disconnected from {TopicPath}");
         isFirstUpdate = true; // Reset on disconnect
         hasReceivedData = false;
     }
