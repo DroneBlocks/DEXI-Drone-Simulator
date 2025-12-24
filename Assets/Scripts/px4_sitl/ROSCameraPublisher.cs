@@ -29,7 +29,11 @@ public class ROSCameraPublisher : MonoBehaviour
 
     [SerializeField]
     [Tooltip("Target publish rate in Hz (frames per second)")]
-    private float publishRate = 30f;
+    private float publishRate = 10f;
+
+    [SerializeField]
+    [Tooltip("JPEG compression quality (1-100, lower = smaller file)")]
+    private int jpegQuality = 75;
 
     [SerializeField]
     [Tooltip("Show FPS counter")]
@@ -54,8 +58,8 @@ public class ROSCameraPublisher : MonoBehaviour
 
     // Add field of view parameters for easier calibration
     [SerializeField]
-    [Tooltip("Horizontal field of view in degrees")]
-    private float horizontalFOV = 43f;  // Calibrated FOV that gives correct measurements
+    [Tooltip("Horizontal field of view in degrees (from Pi Camera v3 calibration at 800x600)")]
+    private float horizontalFOV = 38f;  // Pi Camera v3 calibrated: fx=1161 at 800x600 → 38° horizontal
 
     [SerializeField]
     [Tooltip("Show GUI button for manual publishing")]
@@ -88,23 +92,19 @@ public class ROSCameraPublisher : MonoBehaviour
     }
 
     [Serializable]
-    private class ROSImageMessage
+    private class ROSCompressedImageMessage
     {
         public string op;
         public string topic;
-        public ImageMessageData msg;
+        public CompressedImageMessageData msg;
         public string type;
     }
 
     [Serializable]
-    private class ImageMessageData
+    private class CompressedImageMessageData
     {
         public Header header;
-        public uint height;
-        public uint width;
-        public string encoding;
-        public byte is_bigendian;
-        public uint step;
+        public string format;
         public byte[] data;
     }
 
@@ -202,22 +202,22 @@ public class ROSCameraPublisher : MonoBehaviour
             Debug.Log("Connection open!");
             isConnected = true;
 
-            // Advertise the image publisher
-            var advertiseImageMsg = new ROSImageMessage
+            // Advertise the compressed image publisher
+            var advertiseImageMsg = new ROSCompressedImageMessage
             {
                 op = "advertise",
-                topic = "/image_rect",
-                type = "sensor_msgs/Image"  // Changed from sensor_msgs/msg/Image
+                topic = "/image_rect/compressed",
+                type = "sensor_msgs/CompressedImage"
             };
-            
+
             // Advertise the camera info publisher
             var advertiseCameraInfoMsg = new ROSCameraInfoMessage
             {
                 op = "advertise",
                 topic = "/camera_info",
-                type = "sensor_msgs/CameraInfo"  // Changed from sensor_msgs/msg/CameraInfo
+                type = "sensor_msgs/CameraInfo"
             };
-            
+
             websocket.SendText(JsonUtility.ToJson(advertiseImageMsg));
             websocket.SendText(JsonUtility.ToJson(advertiseCameraInfoMsg));
         };
@@ -314,18 +314,20 @@ public class ROSCameraPublisher : MonoBehaviour
 
     public async void PublishCameraImage()
     {
-        Debug.Log("Publish Camera Image button clicked!");
-
         if (!isConnected)
         {
             Debug.LogWarning("Not connected to ROS bridge!");
             return;
         }
 
-        Debug.Log("Publishing image to /image_rect topic...");
-
         try
         {
+            // Save camera's viewport rect (may be modified by PIP)
+            Rect originalRect = sourceCamera.rect;
+
+            // Reset to full viewport for capture
+            sourceCamera.rect = new Rect(0, 0, 1, 1);
+
             // Capture the camera image
             sourceCamera.targetTexture = renderTexture;
             sourceCamera.Render();
@@ -335,25 +337,18 @@ public class ROSCameraPublisher : MonoBehaviour
             sourceCamera.targetTexture = null;
             RenderTexture.active = null;
 
-            // Get the raw image data
-            byte[] originalData = texture2D.GetRawTextureData();
-            byte[] flippedData = new byte[originalData.Length];
-            
-            // Flip the image vertically
-            int bytesPerRow = imageWidth * 3; // 3 bytes per pixel (RGB)
-            for (int y = 0; y < imageHeight; y++)
-            {
-                int sourceRow = y * bytesPerRow;
-                int targetRow = (imageHeight - 1 - y) * bytesPerRow;
-                Array.Copy(originalData, sourceRow, flippedData, targetRow, bytesPerRow);
-            }
+            // Restore original viewport rect
+            sourceCamera.rect = originalRect;
 
-            var rosMessage = new ROSImageMessage
+            // Encode as JPEG (much smaller than raw RGB)
+            byte[] jpegData = texture2D.EncodeToJPG(jpegQuality);
+
+            var rosMessage = new ROSCompressedImageMessage
             {
                 op = "publish",
-                topic = "/image_rect",
-                type = "sensor_msgs/Image",
-                msg = new ImageMessageData
+                topic = "/image_rect/compressed",
+                type = "sensor_msgs/CompressedImage",
+                msg = new CompressedImageMessageData
                 {
                     header = new Header
                     {
@@ -364,12 +359,8 @@ public class ROSCameraPublisher : MonoBehaviour
                         },
                         frame_id = frameId
                     },
-                    height = (uint)imageHeight,
-                    width = (uint)imageWidth,
-                    encoding = "rgb8",
-                    is_bigendian = 0,
-                    step = (uint)(imageWidth * 3),
-                    data = flippedData
+                    format = "jpeg",
+                    data = jpegData
                 }
             };
 
