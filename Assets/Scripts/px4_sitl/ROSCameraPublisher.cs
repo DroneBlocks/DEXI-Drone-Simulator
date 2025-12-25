@@ -438,21 +438,20 @@ public class ROSCameraPublisher : MonoBehaviour
             GUI.backgroundColor = Color.white;
         }
 
-        // FPS display in bottom right corner
+        // FPS display in bottom left corner
         if (showFPS)
         {
-            int w = Screen.width;
             int h = Screen.height;
             string fpsText = $"FPS: {currentFPS:F1}";
-            
+
             // Create a style for the FPS text
             GUIStyle style = new GUIStyle(GUI.skin.label);
             style.fontSize = 16;
             style.normal.textColor = Color.white;
             style.fontStyle = FontStyle.Bold;
-            
+
             // Add a dark background for better visibility
-            Rect bgRect = new Rect(w - 120, h - 40, 110, 30);
+            Rect bgRect = new Rect(10, h - 40, 110, 30);
             GUI.color = new Color(0, 0, 0, 0.7f);
             GUI.DrawTexture(bgRect, Texture2D.whiteTexture);
             
