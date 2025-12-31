@@ -43,6 +43,15 @@ public class ROSCameraPublisher : MonoBehaviour
     [Tooltip("Camera frame ID")]
     private string frameId = "camera";
 
+    [Header("ROS Topics")]
+    [SerializeField]
+    [Tooltip("Topic for compressed image")]
+    private string imageTopic = "/cam0/image_raw/compressed";
+
+    [SerializeField]
+    [Tooltip("Topic for camera info")]
+    private string cameraInfoTopic = "/cam0/camera_info";
+
     // Camera calibration parameters
     [SerializeField]
     [Tooltip("Camera focal length in pixels")]
@@ -206,7 +215,7 @@ public class ROSCameraPublisher : MonoBehaviour
             var advertiseImageMsg = new ROSCompressedImageMessage
             {
                 op = "advertise",
-                topic = "/image_rect/compressed",
+                topic = imageTopic,
                 type = "sensor_msgs/CompressedImage"
             };
 
@@ -214,7 +223,7 @@ public class ROSCameraPublisher : MonoBehaviour
             var advertiseCameraInfoMsg = new ROSCameraInfoMessage
             {
                 op = "advertise",
-                topic = "/camera_info",
+                topic = cameraInfoTopic,
                 type = "sensor_msgs/CameraInfo"
             };
 
@@ -258,7 +267,7 @@ public class ROSCameraPublisher : MonoBehaviour
             var cameraInfoMsg = new ROSCameraInfoMessage
             {
                 op = "publish",
-                topic = "/camera_info",
+                topic = cameraInfoTopic,
                 type = "sensor_msgs/CameraInfo",
                 msg = new CameraInfoMessageData
                 {
@@ -346,7 +355,7 @@ public class ROSCameraPublisher : MonoBehaviour
             var rosMessage = new ROSCompressedImageMessage
             {
                 op = "publish",
-                topic = "/image_rect/compressed",
+                topic = imageTopic,
                 type = "sensor_msgs/CompressedImage",
                 msg = new CompressedImageMessageData
                 {

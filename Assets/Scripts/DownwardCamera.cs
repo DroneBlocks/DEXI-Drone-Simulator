@@ -46,7 +46,7 @@ public class DownwardCamera : MonoBehaviour
         Vector3 desiredPosition = target.position + Vector3.down * verticalOffset;
         transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
 
-        // Always point straight down
-        transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+        // Match drone's full rotation, then point down relative to drone body
+        transform.rotation = target.rotation * Quaternion.Euler(90f, 0f, 0f);
     }
 }
