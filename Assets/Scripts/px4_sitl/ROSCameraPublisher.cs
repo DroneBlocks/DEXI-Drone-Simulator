@@ -1,20 +1,9 @@
 using UnityEngine;
 using System;
-using System.Text;
-using System.Collections;
-using NativeWebSocket;
 using System.Threading.Tasks;
 
 public class ROSCameraPublisher : MonoBehaviour
 {
-    [SerializeField]
-    [Tooltip("URL for ROS bridge when running in Unity Editor or standalone builds")]
-    private string rosbridge_url = "ws://localhost:9090";
-    
-    [SerializeField]
-    [Tooltip("URL for ROS bridge when running in WebGL builds")]
-    private string webgl_rosbridge_url = "ws://localhost:9090";
-
     [SerializeField]
     [Tooltip("Camera to capture images from")]
     private Camera sourceCamera;
@@ -78,36 +67,21 @@ public class ROSCameraPublisher : MonoBehaviour
     [Tooltip("Automatically publish images at the target publish rate")]
     private bool autoPublish = true;
 
-    private WebSocket websocket;
-    private bool isConnected = false;
     private RenderTexture renderTexture;
     private Texture2D texture2D;
 
     private float publishInterval;
     private float lastPublishTime;
-    
+
     // FPS tracking
     private float[] frameDeltaTimeArray = new float[30];
     private int frameDeltaTimeIndex = 0;
     private float currentFPS;
 
-    private string GetRosBridgeUrl()
-    {
-#if UNITY_WEBGL && !UNITY_EDITOR
-        return webgl_rosbridge_url;
-#else
-        return rosbridge_url;
-#endif
-    }
-
-    [Serializable]
-    private class ROSCompressedImageMessage
-    {
-        public string op;
-        public string topic;
-        public CompressedImageMessageData msg;
-        public string type;
-    }
+    // Resolved topic names (with namespace applied)
+    private string resolvedImageTopic;
+    private string resolvedCameraInfoTopic;
+    private bool hasAdvertised = false;
 
     [Serializable]
     private class CompressedImageMessageData
@@ -129,15 +103,6 @@ public class ROSCameraPublisher : MonoBehaviour
     {
         public int sec;
         public uint nanosec;
-    }
-
-    [Serializable]
-    private class ROSCameraInfoMessage
-    {
-        public string op;
-        public string topic;
-        public CameraInfoMessageData msg;
-        public string type;
     }
 
     [Serializable]
@@ -188,8 +153,20 @@ public class ROSCameraPublisher : MonoBehaviour
         // Initialize publish rate tracking
         publishInterval = 1f / publishRate;
         lastPublishTime = -publishInterval; // Ensure first frame publishes immediately
-        
-        ConnectToROS();
+
+        // Apply namespace to topics
+        resolvedImageTopic = ROSBridgeManager.Instance.ApplyNamespace(imageTopic);
+        resolvedCameraInfoTopic = ROSBridgeManager.Instance.ApplyNamespace(cameraInfoTopic);
+
+        // Subscribe to connection events
+        ROSBridgeManager.Instance.OnConnected += OnROSConnected;
+        ROSBridgeManager.Instance.OnDisconnected += OnROSDisconnected;
+
+        // If already connected, advertise topics
+        if (ROSBridgeManager.Instance.IsConnected)
+        {
+            AdvertiseTopics();
+        }
 
         Debug.Log($"Camera calibration parameters:");
         Debug.Log($"Focal Length: {focalLength}");
@@ -198,122 +175,84 @@ public class ROSCameraPublisher : MonoBehaviour
         Debug.Log($"Image Width: {imageWidth}");
         Debug.Log($"Image Height: {imageHeight}");
         Debug.Log($"Horizontal FOV: {horizontalFOV}");
+        Debug.Log($"Image Topic: {resolvedImageTopic}");
+        Debug.Log($"Camera Info Topic: {resolvedCameraInfoTopic}");
     }
 
-    async void ConnectToROS()
+    private void OnROSConnected()
     {
-        string url = GetRosBridgeUrl();
-        Debug.Log($"Attempting to connect to ROSBridge at {url}");
-        websocket = new WebSocket(url);
+        Debug.Log("ROSCameraPublisher: ROS Bridge connected, advertising topics");
+        AdvertiseTopics();
+    }
 
-        websocket.OnOpen += () =>
-        {
-            Debug.Log("Connection open!");
-            isConnected = true;
+    private void OnROSDisconnected()
+    {
+        Debug.Log("ROSCameraPublisher: ROS Bridge disconnected");
+        hasAdvertised = false;
+    }
 
-            // Advertise the compressed image publisher
-            var advertiseImageMsg = new ROSCompressedImageMessage
-            {
-                op = "advertise",
-                topic = imageTopic,
-                type = "sensor_msgs/CompressedImage"
-            };
+    private void AdvertiseTopics()
+    {
+        if (hasAdvertised) return;
 
-            // Advertise the camera info publisher
-            var advertiseCameraInfoMsg = new ROSCameraInfoMessage
-            {
-                op = "advertise",
-                topic = cameraInfoTopic,
-                type = "sensor_msgs/CameraInfo"
-            };
-
-            websocket.SendText(JsonUtility.ToJson(advertiseImageMsg));
-            websocket.SendText(JsonUtility.ToJson(advertiseCameraInfoMsg));
-        };
-
-        websocket.OnError += (e) =>
-        {
-            Debug.LogError($"WebSocket Error! {e}");
-        };
-
-        websocket.OnClose += (e) =>
-        {
-            Debug.Log("Connection closed!");
-            isConnected = false;
-        };
-
-        websocket.OnMessage += (bytes) =>
-        {
-            var message = Encoding.UTF8.GetString(bytes);
-            Debug.Log($"OnMessage! {message}");
-        };
-
-        try
-        {
-            await websocket.Connect();
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"Failed to connect: {e.Message}");
-        }
+        ROSBridgeManager.Instance.Advertise(resolvedImageTopic, "sensor_msgs/CompressedImage");
+        ROSBridgeManager.Instance.Advertise(resolvedCameraInfoTopic, "sensor_msgs/CameraInfo");
+        hasAdvertised = true;
     }
 
     private async Task PublishCameraInfo()
     {
-        if (!isConnected) return;
+        if (!ROSBridgeManager.Instance.IsConnected) return;
 
         try
         {
-            var cameraInfoMsg = new ROSCameraInfoMessage
+            var cameraInfoData = new CameraInfoMessageData
             {
-                op = "publish",
-                topic = cameraInfoTopic,
-                type = "sensor_msgs/CameraInfo",
-                msg = new CameraInfoMessageData
+                header = new Header
                 {
-                    header = new Header
+                    stamp = new TimeMsg
                     {
-                        stamp = new TimeMsg
-                        {
-                            sec = (int)Time.time,
-                            nanosec = (uint)((Time.time % 1) * 1e9)
-                        },
-                        frame_id = frameId
+                        sec = (int)Time.time,
+                        nanosec = (uint)((Time.time % 1) * 1e9)
                     },
+                    frame_id = frameId
+                },
+                height = (uint)imageHeight,
+                width = (uint)imageWidth,
+                distortion_model = "plumb_bob",
+                d = new double[] { 0, 0, 0, 0, 0 },
+                k = new double[] {
+                    focalLength, 0, principalPointX,
+                    0, focalLength, principalPointY,
+                    0, 0, 1
+                },
+                r = new double[] {
+                    1, 0, 0,
+                    0, 1, 0,
+                    0, 0, 1
+                },
+                p = new double[] {
+                    focalLength, 0, principalPointX, 0,
+                    0, focalLength, principalPointY, 0,
+                    0, 0, 1, 0
+                },
+                binning_x = 1,
+                binning_y = 1,
+                roi = new ROI
+                {
+                    x_offset = 0,
+                    y_offset = 0,
                     height = (uint)imageHeight,
                     width = (uint)imageWidth,
-                    distortion_model = "plumb_bob",
-                    d = new double[] { 0, 0, 0, 0, 0 },  // Changed from D to d
-                    k = new double[] {  // Changed from K to k
-                        focalLength, 0, principalPointX,
-                        0, focalLength, principalPointY,
-                        0, 0, 1
-                    },
-                    r = new double[] {  // Changed from R to r
-                        1, 0, 0,
-                        0, 1, 0,
-                        0, 0, 1
-                    },
-                    p = new double[] {  // Changed from P to p
-                        focalLength, 0, principalPointX, 0,
-                        0, focalLength, principalPointY, 0,
-                        0, 0, 1, 0
-                    },
-                    binning_x = 1,
-                    binning_y = 1,
-                    roi = new ROI
-                    {
-                        x_offset = 0,
-                        y_offset = 0,
-                        height = (uint)imageHeight,
-                        width = (uint)imageWidth,
-                        do_rectify = false
-                    }
+                    do_rectify = false
                 }
             };
 
-            string jsonMessage = JsonUtility.ToJson(cameraInfoMsg);
-            await websocket.SendText(jsonMessage);
+            await ROSBridgeManager.Instance.Publish(
+                resolvedCameraInfoTopic,
+                "sensor_msgs/CameraInfo",
+                cameraInfoData
+            );
         }
         catch (Exception e)
         {
@@ -323,7 +262,7 @@ public class ROSCameraPublisher : MonoBehaviour
 
     public async void PublishCameraImage()
     {
-        if (!isConnected)
+        if (!ROSBridgeManager.Instance.IsConnected)
         {
             Debug.LogWarning("Not connected to ROS bridge!");
             return;
@@ -352,29 +291,26 @@ public class ROSCameraPublisher : MonoBehaviour
             // Encode as JPEG (much smaller than raw RGB)
             byte[] jpegData = texture2D.EncodeToJPG(jpegQuality);
 
-            var rosMessage = new ROSCompressedImageMessage
+            var imageData = new CompressedImageMessageData
             {
-                op = "publish",
-                topic = imageTopic,
-                type = "sensor_msgs/CompressedImage",
-                msg = new CompressedImageMessageData
+                header = new Header
                 {
-                    header = new Header
+                    stamp = new TimeMsg
                     {
-                        stamp = new TimeMsg
-                        {
-                            sec = (int)Time.time,
-                            nanosec = (uint)((Time.time % 1) * 1e9)
-                        },
-                        frame_id = frameId
+                        sec = (int)Time.time,
+                        nanosec = (uint)((Time.time % 1) * 1e9)
                     },
-                    format = "jpeg",
-                    data = jpegData
-                }
+                    frame_id = frameId
+                },
+                format = "jpeg",
+                data = jpegData
             };
 
-            string jsonMessage = JsonUtility.ToJson(rosMessage);
-            await websocket.SendText(jsonMessage);
+            await ROSBridgeManager.Instance.Publish(
+                resolvedImageTopic,
+                "sensor_msgs/CompressedImage",
+                imageData
+            );
 
             // Publish camera info along with the image
             await PublishCameraInfo();
@@ -387,10 +323,6 @@ public class ROSCameraPublisher : MonoBehaviour
 
     private void Update()
     {
-#if !UNITY_WEBGL || UNITY_EDITOR
-        websocket?.DispatchMessageQueue();
-#endif
-        
         // Track FPS using moving average
         if (showFPS)
         {
@@ -407,23 +339,22 @@ public class ROSCameraPublisher : MonoBehaviour
         }
 
         // Check if it's time to publish based on the target rate (only if auto-publish is enabled)
-        if (autoPublish && isConnected && Time.time - lastPublishTime >= publishInterval)
+        if (autoPublish && ROSBridgeManager.Instance.IsConnected && Time.time - lastPublishTime >= publishInterval)
         {
             PublishCameraImage();
             lastPublishTime = Time.time;
         }
     }
 
-    private async void OnApplicationQuit()
-    {
-        if (websocket != null && isConnected)
-        {
-            await websocket.Close();
-        }
-    }
-
     private void OnDestroy()
     {
+        // Unsubscribe from connection events
+        if (ROSBridgeManager.Instance != null)
+        {
+            ROSBridgeManager.Instance.OnConnected -= OnROSConnected;
+            ROSBridgeManager.Instance.OnDisconnected -= OnROSDisconnected;
+        }
+
         if (renderTexture != null)
         {
             renderTexture.Release();

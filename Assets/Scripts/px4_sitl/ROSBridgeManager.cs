@@ -405,6 +405,66 @@ public class ROSBridgeManager : MonoBehaviour
         websocket.SendText(jsonMessage);
     }
 
+    /// <summary>
+    /// Advertise a topic for publishing
+    /// </summary>
+    public void Advertise(string topic, string messageType)
+    {
+        if (!isConnected || websocket == null)
+        {
+            Debug.LogWarning($"Cannot advertise topic {topic}: not connected");
+            return;
+        }
+
+        var advertiseMessage = new
+        {
+            op = "advertise",
+            topic = topic,
+            type = messageType
+        };
+
+        string jsonMessage = JsonConvert.SerializeObject(advertiseMessage);
+        Debug.Log($"Advertising topic: {topic} with type: {messageType}");
+        websocket.SendText(jsonMessage);
+    }
+
+    /// <summary>
+    /// Publish a message to a topic (message should be a serializable object)
+    /// </summary>
+    public async Task Publish(string topic, string messageType, object msg)
+    {
+        if (!isConnected || websocket == null)
+        {
+            Debug.LogWarning($"Cannot publish to topic {topic}: not connected");
+            return;
+        }
+
+        var publishMessage = new
+        {
+            op = "publish",
+            topic = topic,
+            type = messageType,
+            msg = msg
+        };
+
+        string jsonMessage = JsonConvert.SerializeObject(publishMessage);
+        await websocket.SendText(jsonMessage);
+    }
+
+    /// <summary>
+    /// Publish a raw JSON message (for when you need custom serialization)
+    /// </summary>
+    public async Task PublishRaw(string jsonMessage)
+    {
+        if (!isConnected || websocket == null)
+        {
+            Debug.LogWarning("Cannot publish: not connected");
+            return;
+        }
+
+        await websocket.SendText(jsonMessage);
+    }
+
     private void HandleWebSocketMessage(string message)
     {
         try
