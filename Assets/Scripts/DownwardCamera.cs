@@ -3,7 +3,7 @@ using UnityEngine;
 /// <summary>
 /// Camera that follows a target and always points straight down.
 /// Used for AprilTag detection and PIP view.
-/// Configured for Pi Camera v3 standard (66° horizontal FOV).
+/// FOV is configurable - ROSCameraPublisher reads it automatically.
 /// </summary>
 public class DownwardCamera : MonoBehaviour
 {
@@ -24,7 +24,7 @@ public class DownwardCamera : MonoBehaviour
 
     [Header("Camera Settings")]
     [SerializeField]
-    [Tooltip("Vertical FOV in degrees (from Pi Camera v3 calibration: 38° H at 4:3 → 29° V)")]
+    [Tooltip("Vertical FOV in degrees - ROSCameraPublisher will read this automatically")]
     private float verticalFOV = 29f;
 
     private Camera cam;

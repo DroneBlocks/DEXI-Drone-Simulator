@@ -41,23 +41,15 @@ public class ROSCameraPublisher : MonoBehaviour
     [Tooltip("Topic for camera info")]
     private string cameraInfoTopic = "/cam0/camera_info";
 
-    // Camera calibration parameters
+    [Header("Camera Calibration")]
     [SerializeField]
-    [Tooltip("Camera focal length in pixels")]
-    private double focalLength = 400.0;  // Will be calculated from FOV
+    [Tooltip("Horizontal FOV in degrees for focal length calculation")]
+    private float horizontalFOV = 43f;
 
-    [SerializeField]
-    [Tooltip("Camera principal point x (usually width/2)")]
+    // Calculated values
+    private double focalLength;
     private double principalPointX;
-
-    [SerializeField]
-    [Tooltip("Camera principal point y (usually height/2)")]
     private double principalPointY;
-
-    // Add field of view parameters for easier calibration
-    [SerializeField]
-    [Tooltip("Horizontal field of view in degrees (from Pi Camera v3 calibration at 800x600)")]
-    private float horizontalFOV = 38f;  // Pi Camera v3 calibrated: fx=1161 at 800x600 → 38° horizontal
 
     [SerializeField]
     [Tooltip("Show GUI button for manual publishing")]
@@ -138,13 +130,13 @@ public class ROSCameraPublisher : MonoBehaviour
             sourceCamera = Camera.main;
         }
 
-        // Calculate focal length based on FOV and image width
-        float fovRadians = horizontalFOV * Mathf.Deg2Rad;
-        focalLength = (imageWidth / 2.0) / Mathf.Tan(fovRadians / 2);
+        // Calculate focal length from horizontal FOV
+        float horizontalFOVRadians = horizontalFOV * Mathf.Deg2Rad;
+        focalLength = (imageWidth / 2.0) / Mathf.Tan(horizontalFOVRadians / 2);
 
-        // Initialize principal points if not set
-        if (principalPointX == 0) principalPointX = imageWidth / 2.0;
-        if (principalPointY == 0) principalPointY = imageHeight / 2.0;
+        // Principal point is image center
+        principalPointX = imageWidth / 2.0;
+        principalPointY = imageHeight / 2.0;
 
         // Create render texture and texture2D for image capture
         renderTexture = new RenderTexture(imageWidth, imageHeight, 24);
@@ -168,15 +160,7 @@ public class ROSCameraPublisher : MonoBehaviour
             AdvertiseTopics();
         }
 
-        Debug.Log($"Camera calibration parameters:");
-        Debug.Log($"Focal Length: {focalLength}");
-        Debug.Log($"Principal Point X: {principalPointX}");
-        Debug.Log($"Principal Point Y: {principalPointY}");
-        Debug.Log($"Image Width: {imageWidth}");
-        Debug.Log($"Image Height: {imageHeight}");
-        Debug.Log($"Horizontal FOV: {horizontalFOV}");
-        Debug.Log($"Image Topic: {resolvedImageTopic}");
-        Debug.Log($"Camera Info Topic: {resolvedCameraInfoTopic}");
+        Debug.Log($"ROSCameraPublisher - Horizontal FOV: {horizontalFOV}° → Focal Length: {focalLength:F1}px");
     }
 
     private void OnROSConnected()
