@@ -30,10 +30,15 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
     [SerializeField]
     private Vector3 rotationOffset = Vector3.zero;
 
+    [Header("Floor Constraint")]
+    [SerializeField]
+    [Tooltip("Minimum Y position (floor level) to prevent drone from going through the ground")]
+    private float minimumHeight = 0.05f;
+
     [Header("Smoothing Settings")]
     [SerializeField]
     [Tooltip("Enable position and rotation smoothing to reduce jitter")]
-    private bool enableSmoothing = true;
+    private bool enableSmoothing = false;
 
     [SerializeField]
     [Range(0.01f, 1f)]
@@ -165,6 +170,9 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
 
                 // Apply position offset
                 newPosition += positionOffset;
+
+                // Clamp to floor to prevent drone from going through ground
+                newPosition.y = Mathf.Max(newPosition.y, minimumHeight);
 
                 // Parse Rotation
                 if (!float.IsNaN(odometry.q[0]))

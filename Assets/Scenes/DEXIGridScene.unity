@@ -1957,12 +1957,9 @@ MonoBehaviour:
   frameId: camera
   imageTopic: /cam0/image_raw/compressed
   cameraInfoTopic: /cam0/camera_info
-  focalLength: 400
-  principalPointX: 160
-  principalPointY: 120
   horizontalFOV: 43
   showPublishButton: 1
-  autoPublish: 0
+  autoPublish: 1
 --- !u!4 &1462900738
 Transform:
   m_ObjectHideFlags: 0
@@ -2043,6 +2040,10 @@ PrefabInstance:
     - target: {fileID: 4586986501844537080, guid: de9434e62061f41baa532af060266786, type: 3}
       propertyPath: debugRotation
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4586986501844537080, guid: de9434e62061f41baa532af060266786, type: 3}
+      propertyPath: enableSmoothing
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4586986501844537080, guid: de9434e62061f41baa532af060266786, type: 3}
       propertyPath: yawSmoothingFactor
