@@ -33,7 +33,16 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
     [Header("Floor Constraint")]
     [SerializeField]
     [Tooltip("Minimum Y position (floor level) to prevent drone from going through the ground")]
-    private float minimumHeight = 0.05f;
+    private float minimumHeight = 0.4f;
+
+    [Header("Landed Detection")]
+    [SerializeField]
+    [Tooltip("Snap to ground when altitude below this and velocity near zero")]
+    private float landedAltitudeThreshold = 0.5f;
+
+    [SerializeField]
+    [Tooltip("Velocity magnitude below this is considered stationary")]
+    private float landedVelocityThreshold = 0.1f;
 
     [Header("Smoothing Settings")]
     [SerializeField]
@@ -171,8 +180,26 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
                 // Apply position offset
                 newPosition += positionOffset;
 
-                // Clamp to floor to prevent drone from going through ground
-                newPosition.y = Mathf.Max(newPosition.y, minimumHeight);
+                // Calculate velocity magnitude (NED to Unity conversion not needed for magnitude)
+                float velocityMagnitude = Mathf.Sqrt(
+                    odometry.velocity[0] * odometry.velocity[0] +
+                    odometry.velocity[1] * odometry.velocity[1] +
+                    odometry.velocity[2] * odometry.velocity[2]
+                );
+
+                // Detect landed state: low altitude + low velocity = snap to ground
+                bool isLanded = newPosition.y < landedAltitudeThreshold && velocityMagnitude < landedVelocityThreshold;
+
+                if (isLanded)
+                {
+                    // Snap to ground when landed
+                    newPosition.y = minimumHeight;
+                }
+                else
+                {
+                    // Clamp to floor to prevent drone from going through ground
+                    newPosition.y = Mathf.Max(newPosition.y, minimumHeight);
+                }
 
                 // Parse Rotation
                 if (!float.IsNaN(odometry.q[0]))
