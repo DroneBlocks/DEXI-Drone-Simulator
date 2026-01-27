@@ -45,6 +45,11 @@ mergeInto(LibraryManager.library, {
         var buffer = _malloc(bufferSize);
         stringToUTF8(origin, buffer, bufferSize);
         return buffer;
+    },
+
+    // Check if page is served over HTTPS
+    IsSecureContext: function() {
+        return window.location.protocol === 'https:' ? 1 : 0;
     }
 
 });

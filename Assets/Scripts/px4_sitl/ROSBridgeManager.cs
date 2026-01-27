@@ -43,6 +43,9 @@ public class ROSBridgeManager : MonoBehaviour
 
     [DllImport("__Internal")]
     private static extern string GetHostname();
+
+    [DllImport("__Internal")]
+    private static extern int IsSecureContext();
 #endif
 
     [Header("ROS2 Connection Settings")]
@@ -371,7 +374,9 @@ public class ROSBridgeManager : MonoBehaviour
             string hostname = GetHostname();
             if (!string.IsNullOrEmpty(hostname))
             {
-                string constructedUrl = $"ws://{hostname}:{rosbridge_port}";
+                // Use wss:// for HTTPS pages, ws:// for HTTP pages
+                string protocol = IsSecureContext() == 1 ? "wss" : "ws";
+                string constructedUrl = $"{protocol}://{hostname}:{rosbridge_port}";
                 Debug.Log($"Using ROS bridge URL constructed from hostname: {constructedUrl}");
                 return constructedUrl;
             }
