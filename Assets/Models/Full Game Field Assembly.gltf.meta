@@ -2,7 +2,12 @@ fileFormatVersion: 2
 guid: 73069f4c009e0f4478fac0be1a14865a
 ScriptedImporter:
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: 0.647059_0.647059_0.647059_0.000000_0.000000
+    second: {fileID: 2100000, guid: f5a1fb136f0ae6047938f62d16961926, type: 2}
   serializedVersion: 2
   userData: 
   assetBundleName: 
@@ -47,19 +52,19 @@ ScriptedImporter:
 '
   optimizeGameObjects: 0
   materials:
-  - {instanceID: 0}
-  - {instanceID: 0}
-  - {instanceID: 0}
-  - {instanceID: 0}
-  - {instanceID: 0}
-  - {instanceID: 0}
-  - {instanceID: 0}
-  - {instanceID: 0}
-  - {instanceID: 0}
-  - {instanceID: 0}
-  - {instanceID: 0}
-  - {instanceID: 0}
-  - {instanceID: 0}
+  - {fileID: 8700421715103192860, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: -6264911931313677300, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 3554819700970293368, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 4154249109739032482, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: -20209234369071907, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: -4076210518267021313, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 4413029529068330265, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: -600333134929341362, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 3426238511580913157, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 5109424970147356552, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 4998033889311989265, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 8593487660084519160, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 7099777516610290194, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
   textures: []
   hasSceneData: 1
   hasAnimationData: 0
