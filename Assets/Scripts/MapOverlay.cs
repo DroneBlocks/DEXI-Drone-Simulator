@@ -270,7 +270,7 @@ public class MapOverlay : MonoBehaviour
         groundPlane.transform.localScale = new Vector3(scale, 1, scale);
 
         // Create material with unlit shader
-        Material mapMaterial = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+        Material mapMaterial = RuntimeMaterials.Instance.CreateUnlit(Color.white);
         mapMaterial.name = "MapGroundMaterial";
         groundPlane.GetComponent<Renderer>().material = mapMaterial;
 

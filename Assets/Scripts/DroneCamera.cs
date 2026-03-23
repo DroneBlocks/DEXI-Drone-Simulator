@@ -3,19 +3,19 @@ using UnityEngine;
 public class DroneCamera : MonoBehaviour
 {
     public Transform target;
-    public float followDistance = 5.0f;
-    public float height = 2.0f;
+    public float followDistance = 0.44f;
+    public float height = 1.0f;
     public float smoothSpeed = 5.0f;
     public float tiltAngle = 30f;
-    
+
     // Orbit settings
-    public float orbitSpeed = 100f;
+    public float orbitSpeed = 2000f;
     public float minVerticalAngle = -30f;
     public float maxVerticalAngle = 80f;
 
     // Zoom settings
     public float zoomSpeed = 2f;
-    public float minZoomDistance = 2f;
+    public float minZoomDistance = 0.1f;
     public float maxZoomDistance = 50f;
     
     // FPV view settings

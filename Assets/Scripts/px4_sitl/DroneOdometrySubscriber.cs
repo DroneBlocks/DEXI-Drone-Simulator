@@ -33,12 +33,12 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
     [Header("Floor Constraint")]
     [SerializeField]
     [Tooltip("Minimum Y position (floor level) to prevent drone from going through the ground")]
-    private float minimumHeight = 0.4f;
+    private float minimumHeight = 0.05f;
 
     [Header("Landed Detection")]
     [SerializeField]
     [Tooltip("Snap to ground when altitude below this and velocity near zero")]
-    private float landedAltitudeThreshold = 0.5f;
+    private float landedAltitudeThreshold = 0.15f;
 
     [SerializeField]
     [Tooltip("Velocity magnitude below this is considered stationary")]
@@ -169,6 +169,12 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
 
             if (odometry != null)
             {
+                // Freeze position/rotation when disarmed to prevent drift
+                if (!PX4StateManager.Instance.IsArmed)
+                {
+                    return;
+                }
+
                 // Parse Position
                 // PX4: NED (North-East-Down) to Unity: Right-Up-Forward
                 Vector3 newPosition = new Vector3(
@@ -189,6 +195,22 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
 
                 // Detect landed state: low altitude + low velocity = snap to ground
                 bool isLanded = newPosition.y < landedAltitudeThreshold && velocityMagnitude < landedVelocityThreshold;
+
+                // Control Rigidbody based on landed state
+                Rigidbody rb = droneTransform != null ? droneTransform.GetComponent<Rigidbody>() : null;
+                if (rb != null)
+                {
+                    if (isLanded && !rb.isKinematic)
+                    {
+                        rb.isKinematic = true;
+                        rb.linearVelocity = Vector3.zero;
+                        rb.angularVelocity = Vector3.zero;
+                    }
+                    else if (!isLanded && rb.isKinematic)
+                    {
+                        rb.isKinematic = false;
+                    }
+                }
 
                 if (isLanded)
                 {

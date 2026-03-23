@@ -16,7 +16,7 @@ public class PictureInPictureCamera : MonoBehaviour
     [SerializeField]
     [Tooltip("Height of PiP window as percentage of screen (0-1)")]
     [Range(0.1f, 0.5f)]
-    private float windowHeight = 0.25f;
+    private float windowHeight = 0.1875f;
 
     [SerializeField]
     [Tooltip("Margin from right edge of screen (in percentage)")]
@@ -98,10 +98,14 @@ public class PictureInPictureCamera : MonoBehaviour
         if (enablePiP)
         {
             // Calculate viewport rect (bottom-right corner)
+            // Maintain 4:3 aspect ratio regardless of screen dimensions
+            float aspectRatio = 4f / 3f;
+            float actualHeight = (windowWidth * Screen.width) / (aspectRatio * Screen.height);
+
             float x = 1f - windowWidth - marginRight;
             float y = marginBottom;
 
-            viewportRect = new Rect(x, y, windowWidth, windowHeight);
+            viewportRect = new Rect(x, y, windowWidth, actualHeight);
             pipCamera.rect = viewportRect;
 
             // Make sure PiP camera renders after main camera

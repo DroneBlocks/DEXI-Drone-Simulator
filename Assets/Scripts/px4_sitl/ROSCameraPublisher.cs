@@ -10,15 +10,15 @@ public class ROSCameraPublisher : MonoBehaviour
 
     [SerializeField]
     [Tooltip("Width of the published image")]
-    private int imageWidth = 320;
+    private int imageWidth = 640;
 
     [SerializeField]
     [Tooltip("Height of the published image")]
-    private int imageHeight = 240;
+    private int imageHeight = 480;
 
     [SerializeField]
     [Tooltip("Target publish rate in Hz (frames per second)")]
-    private float publishRate = 10f;
+    private float publishRate = 15f;
 
     [SerializeField]
     [Tooltip("JPEG compression quality (1-100, lower = smaller file)")]
@@ -44,7 +44,7 @@ public class ROSCameraPublisher : MonoBehaviour
     [Header("Camera Calibration")]
     [SerializeField]
     [Tooltip("Horizontal FOV in degrees for focal length calculation")]
-    private float horizontalFOV = 43f;
+    private float horizontalFOV = 62f;
 
     // Calculated values
     private double focalLength;

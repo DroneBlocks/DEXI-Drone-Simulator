@@ -21,6 +21,12 @@ public class DroneMotor : MonoBehaviour, IMotor
 
     public void UpdateMotor(Rigidbody rb, DroneInputs inputs)
     {
+        // Don't apply forces when disarmed
+        if (!PX4StateManager.Instance.IsArmed)
+        {
+            HandlePropellers(inputs.Throttle);
+            return;
+        }
 
         // Keep the drone level while rolling and pitching
         Vector3 upVec = transform.up;
