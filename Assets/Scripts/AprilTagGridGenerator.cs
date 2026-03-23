@@ -7,13 +7,16 @@ public class AprilTagGridGenerator : MonoBehaviour
     public int gridCountX = 10;
 
     [Tooltip("Number of tags along Z axis")]
-    public int gridCountZ = 10;
+    public int gridCountZ = 2;
 
-    [Tooltip("Distance between tags in meters")]
-    public float spacing = 10f;
+    [Tooltip("Distance between tags along X axis in meters")]
+    public float spacingX = 1.0f;
+
+    [Tooltip("Distance between tags along Z axis in meters")]
+    public float spacingZ = 0.5f;
 
     [Tooltip("Starting tag ID (first tag will have this ID)")]
-    public int startingTagId = 1;
+    public int startingTagId = 0;
 
     [Header("Positioning")]
     [Tooltip("Center the grid around this object's position")]
@@ -22,16 +25,32 @@ public class AprilTagGridGenerator : MonoBehaviour
     [Tooltip("Height offset from ground (Y position)")]
     public float heightOffset = 0f;
 
-    [Header("Materials (Optional)")]
-    [Tooltip("Array of materials for tags. Index 0 = first tag, etc. If empty, uses source object's material.")]
+    [Header("Tag Size")]
+    [Tooltip("Tag size in meters (overrides source object scale). Set to 0 to use source object's scale.")]
+    public float tagSize = 0.15f;
+
+    [Header("Materials")]
+    [Tooltip("Array of materials for tags. If empty, auto-loads textures from Resources/AprilTags/")]
     public Material[] tagMaterials;
+
+    [Header("Auto-Load Textures")]
+    [Tooltip("Resource path prefix for auto-loading tag textures (e.g. 'AprilTags/apriltag_')")]
+    public string textureResourcePrefix = "AprilTags/apriltag_";
+
+    [Tooltip("Number of digits for zero-padded texture names (e.g. 5 for apriltag_00000)")]
+    public int textureNameDigits = 5;
 
     private GameObject tagsContainer;
     private GameObject sourceObject;
 
+    [Header("Runtime")]
+    [Tooltip("Generate tags at runtime (disable if using editor-generated tags for WebGL builds)")]
+    public bool generateAtRuntime = false;
+
     void Start()
     {
-        GenerateGrid();
+        if (generateAtRuntime)
+            GenerateGrid();
     }
 
     [ContextMenu("Regenerate Grid")]
@@ -55,10 +74,8 @@ public class AprilTagGridGenerator : MonoBehaviour
 
     void GenerateGrid()
     {
-        // Store reference to source object (this GameObject) and hide it
         sourceObject = gameObject;
 
-        // Create container for generated tags
         tagsContainer = new GameObject("GeneratedAprilTags");
         tagsContainer.transform.position = transform.position;
         tagsContainer.transform.rotation = Quaternion.identity;
@@ -68,9 +85,9 @@ public class AprilTagGridGenerator : MonoBehaviour
         if (centerGrid)
         {
             gridOffset = new Vector3(
-                -(gridCountX - 1) * spacing / 2f,
+                -(gridCountX - 1) * spacingX / 2f,
                 0,
-                -(gridCountZ - 1) * spacing / 2f
+                -(gridCountZ - 1) * spacingZ / 2f
             );
         }
 
@@ -82,9 +99,9 @@ public class AprilTagGridGenerator : MonoBehaviour
             for (int x = 0; x < gridCountX; x++)
             {
                 Vector3 position = basePosition + new Vector3(
-                    x * spacing + gridOffset.x,
+                    x * spacingX + gridOffset.x,
                     heightOffset,
-                    z * spacing + gridOffset.z
+                    z * spacingZ + gridOffset.z
                 );
 
                 CreateTag(tagId, position, x, z);
@@ -92,31 +109,46 @@ public class AprilTagGridGenerator : MonoBehaviour
             }
         }
 
-        // Hide the source object (the one this script is attached to)
-        // Keep it disabled so we can reference it but it's not visible
-        GetComponent<Renderer>().enabled = false;
+        // Hide the source object
+        Renderer renderer = GetComponent<Renderer>();
+        if (renderer != null)
+            renderer.enabled = false;
 
-        Debug.Log($"AprilTagGridGenerator: Created {gridCountX * gridCountZ} tags (IDs {startingTagId} to {tagId - 1})");
+        Debug.Log($"AprilTagGridGenerator: Created {gridCountX * gridCountZ} tags (IDs {startingTagId} to {tagId - 1}), " +
+                  $"grid {gridCountX}x{gridCountZ}, spacing {spacingX}m x {spacingZ}m, tag size {tagSize}m");
     }
 
     void CreateTag(int tagId, Vector3 worldPosition, int gridX, int gridZ)
     {
-        // Clone the source object
         GameObject tagObj = Instantiate(sourceObject, worldPosition, sourceObject.transform.rotation);
         tagObj.name = $"AprilTag_{tagId}";
         tagObj.transform.SetParent(tagsContainer.transform);
 
-        // Re-enable renderer on clone (we disabled it on source)
+        // Apply tag size if specified
+        if (tagSize > 0)
+        {
+            tagObj.transform.localScale = new Vector3(tagSize, tagSize, tagSize);
+        }
+
         Renderer renderer = tagObj.GetComponent<Renderer>();
         if (renderer != null)
         {
             renderer.enabled = true;
 
-            // Apply specific material if available
+            // Try explicit materials array first
             int materialIndex = tagId - startingTagId;
             if (tagMaterials != null && materialIndex < tagMaterials.Length && tagMaterials[materialIndex] != null)
             {
                 renderer.material = tagMaterials[materialIndex];
+            }
+            else
+            {
+                // Auto-load texture from Resources
+                Material mat = CreateMaterialForTag(tagId);
+                if (mat != null)
+                {
+                    renderer.material = mat;
+                }
             }
         }
 
@@ -130,7 +162,7 @@ public class AprilTagGridGenerator : MonoBehaviour
                 DestroyImmediate(clonedGenerator);
         }
 
-        // Add AprilTagInfo component to store tag ID
+        // Add AprilTagInfo component
         AprilTagInfo tagInfo = tagObj.GetComponent<AprilTagInfo>();
         if (tagInfo == null)
         {
@@ -140,9 +172,29 @@ public class AprilTagGridGenerator : MonoBehaviour
         tagInfo.gridPosition = new Vector2Int(gridX, gridZ);
     }
 
+    Material CreateMaterialForTag(int tagId)
+    {
+        string textureName = textureResourcePrefix + tagId.ToString().PadLeft(textureNameDigits, '0');
+        Texture2D texture = Resources.Load<Texture2D>(textureName);
+
+        if (texture == null)
+        {
+            Debug.LogWarning($"AprilTagGridGenerator: Could not load texture '{textureName}' for tag {tagId}");
+            return null;
+        }
+
+        // Use Unlit material so tags are clearly visible regardless of lighting
+        Material mat = RuntimeMaterials.Instance.CreateUnlit(texture);
+        mat.name = $"AprilTag_{tagId}_Mat";
+
+        // Point filtering for crisp tag edges
+        texture.filterMode = FilterMode.Point;
+
+        return mat;
+    }
+
     void OnDestroy()
     {
-        // Re-enable renderer if object is destroyed while grid exists
         Renderer renderer = GetComponent<Renderer>();
         if (renderer != null)
         {
@@ -156,7 +208,7 @@ public class AprilTagGridGenerator : MonoBehaviour
 /// </summary>
 public class AprilTagInfo : MonoBehaviour
 {
-    [Tooltip("The April tag ID (1-100 for standard grid)")]
+    [Tooltip("The April tag ID")]
     public int tagId;
 
     [Tooltip("Grid position (x, z) of this tag")]

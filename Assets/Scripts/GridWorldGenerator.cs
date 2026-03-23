@@ -58,9 +58,14 @@ public class GridWorldGenerator : MonoBehaviour
         public Color color;
     }
 
+    [Header("Runtime")]
+    [Tooltip("Generate grid at runtime (disable if using editor-generated grid for WebGL builds)")]
+    public bool generateAtRuntime = false;
+
     void Start()
     {
-        GenerateGridWorld();
+        if (generateAtRuntime)
+            GenerateGridWorld();
     }
 
     [ContextMenu("Regenerate Grid World")]
@@ -203,9 +208,8 @@ public class GridWorldGenerator : MonoBehaviour
 
         LineRenderer lr = lineObj.AddComponent<LineRenderer>();
 
-        // Use unlit shader so colors appear exactly as specified
-        Material lineMat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
-        lineMat.color = color;
+        // Use unlit material so colors appear exactly as specified
+        Material lineMat = RuntimeMaterials.Instance.CreateUnlit(color);
         lr.material = lineMat;
 
         lr.startColor = color;
@@ -282,8 +286,7 @@ public class GridWorldGenerator : MonoBehaviour
                 pad.transform.position = pos;
                 pad.transform.localScale = new Vector3(landingPadSize, 0.05f, landingPadSize);
 
-                Material padMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                padMat.color = landingPadColor;
+                Material padMat = RuntimeMaterials.Instance.CreateLit(landingPadColor);
                 pad.GetComponent<Renderer>().material = padMat;
 
                 // Add collider for landing detection
@@ -307,11 +310,7 @@ public class GridWorldGenerator : MonoBehaviour
             zoneObj.transform.position = zone.center;
             zoneObj.transform.localScale = zone.size;
 
-            Material zoneMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            zoneMat.color = zone.color;
-            // Make it transparent
-            zoneMat.SetFloat("_Surface", 1); // Transparent
-            zoneMat.SetFloat("_Blend", 0); // Alpha blending
+            Material zoneMat = RuntimeMaterials.Instance.CreateLitTransparent(zone.color);
             zoneObj.GetComponent<Renderer>().material = zoneMat;
 
             // Remove collider or make it trigger

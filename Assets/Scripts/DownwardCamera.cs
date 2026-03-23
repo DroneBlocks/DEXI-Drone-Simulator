@@ -25,7 +25,7 @@ public class DownwardCamera : MonoBehaviour
     [Header("Camera Settings")]
     [SerializeField]
     [Tooltip("Vertical FOV in degrees - ROSCameraPublisher will read this automatically")]
-    private float verticalFOV = 29f;
+    private float verticalFOV = 48.8f;
 
     private Camera cam;
 

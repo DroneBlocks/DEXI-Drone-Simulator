@@ -1,0 +1,81 @@
+fileFormatVersion: 2
+guid: 73069f4c009e0f4478fac0be1a14865a
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: 0.647059_0.647059_0.647059_0.000000_0.000000
+    second: {fileID: 2100000, guid: f5a1fb136f0ae6047938f62d16961926, type: 2}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 804e1ce4c496647cfa3f1a1134187c71, type: 3}
+  _removeEmptyRootObjects: 1
+  _scaleFactor: 1
+  _deduplicateResources: 0
+  _maximumLod: 300
+  _readWriteEnabled: 1
+  _generateColliders: 0
+  _addColliders: 0
+  _swapUvs: 0
+  _generateLightmapUVs: 0
+  _importBlendShapeNames: 1
+  _blendShapeFrameWeight:
+    _option: 0
+    _multiplier: 1
+  _importNormals: 0
+  _importTangents: 0
+  _importCamera: 2
+  _importAnimations: 2
+  _mecanimHumanoidFlip: 0
+  _addAnimatorComponent: 0
+  _animationLoopTime: 1
+  _animationLoopPose: 0
+  _importMaterials: 1
+  _enableGpuInstancing: 0
+  _texturesReadWriteEnabled: 1
+  _generateMipMaps: 1
+  _useSceneNameIdentifier: 1
+  _textureCompression: -50
+  _gltfAsset: '<b>Generator: </b>ONSHAPE BY PTC INC, 1.210
+
+    <b>Version: </b>2.0
+
+    
+
+    <b>Extras:
+    </b>
+
+'
+  optimizeGameObjects: 0
+  materials:
+  - {fileID: 8700421715103192860, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: -6264911931313677300, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 3554819700970293368, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 4154249109739032482, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: -20209234369071907, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: -4076210518267021313, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 4413029529068330265, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: -600333134929341362, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 3426238511580913157, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 5109424970147356552, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 4998033889311989265, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 8593487660084519160, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  - {fileID: 7099777516610290194, guid: 73069f4c009e0f4478fac0be1a14865a, type: 3}
+  textures: []
+  hasSceneData: 1
+  hasAnimationData: 0
+  hasMaterialData: 1
+  hasTextureData: 0
+  animations: []
+  _extensions:
+  - name: PTC_onshape_metadata
+    supported: 1
+    used: 1
+    required: 0
+  _textures: []
+  _mainAssetIdentifier: scenes/Root
+  _importPlugins: []

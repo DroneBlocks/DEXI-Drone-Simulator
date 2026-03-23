@@ -79,22 +79,8 @@ public class LEDRingVisualizer : MonoBehaviour
         ledRenderers.Clear();
         ledLights.Clear();
 
-        // Create material for LEDs - try URP Lit shader first (supports emission)
-        Shader ledShader = Shader.Find("Universal Render Pipeline/Lit");
-
-        if (ledShader == null)
-        {
-            // Fallback to URP Unlit
-            ledShader = Shader.Find("Universal Render Pipeline/Unlit");
-        }
-
-        if (ledShader == null)
-        {
-            // Last resort - built-in Standard for non-URP projects
-            ledShader = Shader.Find("Standard");
-        }
-
-        ledMaterial = new Material(ledShader);
+        // Create material for LEDs using RuntimeMaterials (WebGL-safe)
+        ledMaterial = RuntimeMaterials.Instance.CreateLit(Color.black);
 
         // Make it emissive so it glows without needing external lights
         ledMaterial.EnableKeyword("_EMISSION");
