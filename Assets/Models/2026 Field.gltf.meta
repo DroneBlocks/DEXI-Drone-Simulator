@@ -11,6 +11,11 @@ ScriptedImporter:
   _removeEmptyRootObjects: 1
   _scaleFactor: 1
   _deduplicateResources: 0
+  _deduplicatedStatistics:
+    meshCountBefore: 0
+    meshCountAfter: 0
+    textureCountBefore: 0
+    textureCountAfter: 0
   _maximumLod: 300
   _readWriteEnabled: 1
   _generateColliders: 0
@@ -39,7 +44,6 @@ ScriptedImporter:
 
     <b>Version: </b>2.0
 
-    
 
     <b>Extras:
     </b>

@@ -165,8 +165,6 @@ MonoBehaviour:
   m_Script: {fileID: 443144275}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 8
-  gridPosition: {x: 0, y: 4}
 --- !u!23 &11837861
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -266,8 +264,6 @@ MonoBehaviour:
   m_Script: {fileID: 443144275}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 1
-  gridPosition: {x: 1, y: 0}
 --- !u!23 &42382582
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -515,8 +511,6 @@ MonoBehaviour:
   m_Script: {fileID: 443144275}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 5
-  gridPosition: {x: 1, y: 2}
 --- !u!23 &105824854
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1280,8 +1274,6 @@ MonoBehaviour:
   m_Script: {fileID: 443144275}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 18
-  gridPosition: {x: 0, y: 9}
 --- !u!23 &380433313
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6296,15 +6288,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 631674984}
-  followDistance: 5
-  height: 2
+  followDistance: 0.44
+  height: 0.5
   smoothSpeed: 5
   tiltAngle: 30
-  orbitSpeed: 3000
+  orbitSpeed: 2000
   minVerticalAngle: -30
   maxVerticalAngle: 80
   zoomSpeed: 2
-  minZoomDistance: 1
+  minZoomDistance: 0.1
   maxZoomDistance: 50
   fpvForwardOffset: 0.5
   fpvHeightOffset: 0.2

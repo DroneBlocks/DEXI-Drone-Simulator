@@ -4,7 +4,7 @@ public class DroneCamera : MonoBehaviour
 {
     public Transform target;
     public float followDistance = 0.44f;
-    public float height = 1.0f;
+    public float height = 0.5f;
     public float smoothSpeed = 5.0f;
     public float tiltAngle = 30f;
 
