@@ -286,8 +286,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 34
-  gridPosition: {x: 4, y: 3}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &48995731
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -387,8 +387,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 79
-  gridPosition: {x: 9, y: 7}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &53757067
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -622,8 +622,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 89
-  gridPosition: {x: 9, y: 8}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &65386044
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -723,8 +723,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 22
-  gridPosition: {x: 2, y: 2}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &71624461
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -972,8 +972,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 56
-  gridPosition: {x: 6, y: 5}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &74155929
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1398,8 +1398,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 47
-  gridPosition: {x: 7, y: 4}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &91700279
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1499,8 +1499,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 84
-  gridPosition: {x: 4, y: 8}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &95199853
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1600,8 +1600,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 27
-  gridPosition: {x: 7, y: 2}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &104712464
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1802,8 +1802,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 15
-  gridPosition: {x: 5, y: 1}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &111025915
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1903,8 +1903,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 50
-  gridPosition: {x: 0, y: 5}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &114722152
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2137,8 +2137,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 75
-  gridPosition: {x: 5, y: 7}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &138803940
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2436,8 +2436,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 43
-  gridPosition: {x: 3, y: 4}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &249741453
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2594,8 +2594,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 23
-  gridPosition: {x: 3, y: 2}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &282731288
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2695,8 +2695,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 92
-  gridPosition: {x: 2, y: 9}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &283908901
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2796,8 +2796,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 95
-  gridPosition: {x: 5, y: 9}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &312823596
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2897,8 +2897,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 64
-  gridPosition: {x: 4, y: 6}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &352406488
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2998,8 +2998,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 51
-  gridPosition: {x: 1, y: 5}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &374789057
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3764,8 +3764,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 87
-  gridPosition: {x: 7, y: 8}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &492229702
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3865,8 +3865,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 59
-  gridPosition: {x: 9, y: 5}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &514265451
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3966,8 +3966,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 58
-  gridPosition: {x: 8, y: 5}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &519302338
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4363,8 +4363,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 99
-  gridPosition: {x: 9, y: 9}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &564013396
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4464,8 +4464,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 12
-  gridPosition: {x: 2, y: 1}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &567396772
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4565,8 +4565,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 55
-  gridPosition: {x: 5, y: 5}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &585230885
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4666,8 +4666,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 61
-  gridPosition: {x: 1, y: 6}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &595424917
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4767,8 +4767,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 77
-  gridPosition: {x: 7, y: 7}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &597085841
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4868,8 +4868,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 54
-  gridPosition: {x: 4, y: 5}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &603352280
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4969,8 +4969,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 48
-  gridPosition: {x: 8, y: 4}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &622641165
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5178,8 +5178,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 91
-  gridPosition: {x: 1, y: 9}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &680055316
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5279,8 +5279,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 76
-  gridPosition: {x: 6, y: 7}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &695528262
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5380,8 +5380,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 32
-  gridPosition: {x: 2, y: 3}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &704997042
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5481,8 +5481,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 35
-  gridPosition: {x: 5, y: 3}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &743778203
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5582,8 +5582,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 83
-  gridPosition: {x: 3, y: 8}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &787716691
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5683,8 +5683,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 62
-  gridPosition: {x: 2, y: 6}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &793113148
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5784,8 +5784,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 31
-  gridPosition: {x: 1, y: 3}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &803863955
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5885,8 +5885,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 80
-  gridPosition: {x: 0, y: 8}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &824666601
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5986,8 +5986,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 41
-  gridPosition: {x: 1, y: 4}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &837181351
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6087,8 +6087,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 44
-  gridPosition: {x: 4, y: 4}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &852020350
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6188,8 +6188,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 78
-  gridPosition: {x: 8, y: 7}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &864871563
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6437,8 +6437,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 10
-  gridPosition: {x: 0, y: 1}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &878127529
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6538,8 +6538,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 96
-  gridPosition: {x: 6, y: 9}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &884749460
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6787,8 +6787,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 3
-  gridPosition: {x: 3, y: 0}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &895842685
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6888,8 +6888,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 20
-  gridPosition: {x: 0, y: 2}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &899311893
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -7183,8 +7183,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 46
-  gridPosition: {x: 6, y: 4}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &926444629
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -7541,6 +7541,7 @@ GameObject:
   - component: {fileID: 970083188}
   - component: {fileID: 970083187}
   - component: {fileID: 970083186}
+  - component: {fileID: 970083189}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -7561,15 +7562,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 1935247276}
-  followDistance: 5
-  height: 2
+  followDistance: 0.44
+  height: 0.5
   smoothSpeed: 5
   tiltAngle: 30
-  orbitSpeed: 3000
+  orbitSpeed: 2000
   minVerticalAngle: -30
   maxVerticalAngle: 80
   zoomSpeed: 2
-  minZoomDistance: 2
+  minZoomDistance: 0.1
   maxZoomDistance: 50
   fpvForwardOffset: 0.5
   fpvHeightOffset: 0.2
@@ -7641,6 +7642,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &970083189
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 970083185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 0
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_AllowHDROutput: 1
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_Version: 2
+  m_TaaSettings:
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
 --- !u!1 &990642024
 GameObject:
   m_ObjectHideFlags: 0
@@ -7687,8 +7732,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 16
-  gridPosition: {x: 6, y: 1}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &990642027
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -7788,8 +7833,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 52
-  gridPosition: {x: 2, y: 5}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &1003200034
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -7941,8 +7986,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 60
-  gridPosition: {x: 0, y: 6}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &1019072206
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -8082,8 +8127,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 49
-  gridPosition: {x: 9, y: 4}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &1111524670
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -8183,8 +8228,8 @@ MonoBehaviour:
   m_Script: {fileID: 1139587709}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagId: 67
-  gridPosition: {x: 7, y: 6}
+  tagId: 0
+  gridPosition: {x: 0, y: 0}
 --- !u!23 &1136674761
 MeshRenderer:
   m_ObjectHideFlags: 0

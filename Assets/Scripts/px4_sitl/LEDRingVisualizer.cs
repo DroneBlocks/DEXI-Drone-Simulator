@@ -79,11 +79,18 @@ public class LEDRingVisualizer : MonoBehaviour
         ledRenderers.Clear();
         ledLights.Clear();
 
-        // Create material for LEDs using RuntimeMaterials (WebGL-safe)
-        ledMaterial = RuntimeMaterials.Instance.CreateLit(Color.black);
-
-        // Make it emissive so it glows without needing external lights
-        ledMaterial.EnableKeyword("_EMISSION");
+        // Load emissive base material from Resources (ensures emission shader variant survives WebGL stripping)
+        Material emissiveBase = Resources.Load<Material>("Materials/URPLitEmissive");
+        if (emissiveBase != null)
+        {
+            ledMaterial = new Material(emissiveBase);
+        }
+        else
+        {
+            // Fallback for editor
+            ledMaterial = RuntimeMaterials.Instance.CreateLit(Color.black);
+            ledMaterial.EnableKeyword("_EMISSION");
+        }
         ledMaterial.SetFloat("_Surface", 0); // 0 = Opaque
 
         // Create LED objects in a ring
@@ -179,7 +186,7 @@ public class LEDRingVisualizer : MonoBehaviour
         // Update renderer color
         Renderer renderer = ledRenderers[index];
 
-        // Set color and emission for Standard shader
+        // Set color and emission for URP Lit shader
         renderer.material.color = color;
         renderer.material.SetColor("_EmissionColor", color);
 
