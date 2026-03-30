@@ -49,4 +49,9 @@ public class DownwardCamera : MonoBehaviour
         // Match drone's full rotation, then point down relative to drone body
         transform.rotation = target.rotation * Quaternion.Euler(90f, 0f, 0f);
     }
+
+    public void SetTarget(Transform newTarget)
+    {
+        target = newTarget;
+    }
 }

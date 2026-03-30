@@ -26,6 +26,8 @@ public class DroneCamera : MonoBehaviour
     public float bottomViewHeight = 0.5f;    // Distance below drone
     public float groundViewDistance = 20f;    // How far down to look
 
+    public bool shouldUpdateCamera = true;
+
     private enum CameraMode
     {
         Follow,
@@ -56,9 +58,32 @@ public class DroneCamera : MonoBehaviour
         orbitY = tiltAngle;
     }
 
+    public void ShouldUpdateCamera(bool enabled)
+    {
+        shouldUpdateCamera = enabled;
+    }
+
+    public void SetTarget(Transform newTarget)
+    {
+        target = newTarget;
+
+        if (target)
+        {
+            // Reset camera position when target changes
+            Vector3 startPos = target.position;
+            startPos.y += height;
+            startPos.z -= followDistance;
+            transform.position = startPos;
+            // Reset orbit angles
+            orbitX = 0f;
+            orbitY = tiltAngle;
+        }
+    }
+
     void LateUpdate()
     {
         if (!target) return;
+        if (!shouldUpdateCamera) return;
 
         // Check for camera toggle
         if (Input.GetKeyDown(KeyCode.C))
