@@ -20,8 +20,9 @@ public class SimManagementUI : MonoBehaviour
     [Header("References")]
     public Transform sceneSwitchContainer;
     public Transform droneSwapContainer;
-    public PictureInPictureCamera pipCamera;
-    public DroneCamera droneCamera;
+
+    private PictureInPictureCamera pipCamera;
+    private DroneCamera droneCamera;
 
     private GameObject uiCanvas;
     private bool isVisible = false;
@@ -31,6 +32,9 @@ public class SimManagementUI : MonoBehaviour
     {
         uiCanvas = GetComponentInChildren<Canvas>().gameObject;
         uiCanvas.SetActive(false);
+
+        pipCamera = FindFirstObjectByType<PictureInPictureCamera>();
+        droneCamera = FindFirstObjectByType<DroneCamera>();
     }
 
     void Start()

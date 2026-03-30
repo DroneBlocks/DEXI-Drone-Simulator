@@ -334,8 +334,6 @@ MonoBehaviour:
   fontSize: 18
   sceneSwitchContainer: {fileID: 7844783771556832520}
   droneSwapContainer: {fileID: 1237534978845757330}
-  pipCamera: {fileID: 0}
-  droneCamera: {fileID: 0}
 --- !u!1 &5528440064692364496
 GameObject:
   m_ObjectHideFlags: 0
@@ -519,7 +517,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Select a scene
+  m_Text: Select Scene
 --- !u!1 &5966719990326047154
 GameObject:
   m_ObjectHideFlags: 0
@@ -678,4 +676,4 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Swap your drone
+  m_Text: Select Drone

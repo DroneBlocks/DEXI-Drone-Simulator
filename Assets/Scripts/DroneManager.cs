@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public enum DroneModel
 {
@@ -23,7 +24,6 @@ public class DroneManager : MonoBehaviour
     public event Action<DroneType> OnDroneSwapped;
 
     public List<DroneType> drones = new();
-    public Transform spawnPoint;
     public DroneModel defaultModel;
 
     public DroneType ActiveDrone => drones.Count > 0 ? drones[currentIndex] : null;
@@ -32,6 +32,7 @@ public class DroneManager : MonoBehaviour
     private GameObject spawnedDrone;
     private DroneCamera droneCamera;
     private DownwardCamera downwardCamera;
+    private Transform spawnPoint;
 
     private void Awake()
     {
@@ -42,11 +43,7 @@ public class DroneManager : MonoBehaviour
         }
 
         Instance = this;
-
         DontDestroyOnLoad(gameObject);
-
-        droneCamera = FindFirstObjectByType<DroneCamera>();
-        downwardCamera = FindFirstObjectByType<DownwardCamera>();
     }
 
     void Start()
@@ -56,11 +53,35 @@ public class DroneManager : MonoBehaviour
         SpawnDrone();
     }
 
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        droneCamera = FindFirstObjectByType<DroneCamera>();
+        downwardCamera = FindFirstObjectByType<DownwardCamera>();
+
+        spawnPoint = GameObject.FindWithTag("DroneSpawnpoint")?.transform;
+
+        spawnedDrone = null;
+
+        SpawnDrone();
+    }
+
     public void SwapToDrone(DroneModel model)
     {
         int index = drones.FindIndex(d => d.model == model);
         if (index == -1 || index == currentIndex) return;
+
         currentIndex = index;
+
         SpawnDrone();
     }
 
@@ -68,9 +89,12 @@ public class DroneManager : MonoBehaviour
     {
         if (spawnedDrone != null) Destroy(spawnedDrone);
         if (ActiveDrone?.prefab == null) return;
+
         spawnedDrone = Instantiate(ActiveDrone.prefab, spawnPoint.position, spawnPoint.rotation);
+
         droneCamera.SetTarget(spawnedDrone.transform);
         downwardCamera.SetTarget(spawnedDrone.transform);
+
         OnDroneSwapped?.Invoke(ActiveDrone);
     }
 }
