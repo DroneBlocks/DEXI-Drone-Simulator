@@ -65,6 +65,11 @@ public class LEDRingSubscriber : MonoBehaviour, IROSSubscriber
         ROSBridgeManager.Instance.UnregisterSubscriber(this);
     }
 
+    /// <summary>
+    /// Event fired when LED colors are received. Used by LEDColorValidator.
+    /// </summary>
+    public System.Action<LEDState[]> OnLEDColorsReceived;
+
     public void OnMessageReceived(string message)
     {
         try
@@ -76,6 +81,9 @@ public class LEDRingSubscriber : MonoBehaviour, IROSSubscriber
             {
                 // Update the LED ring visualizer
                 ledRingVisualizer.UpdateLEDs(ledStateArray.leds);
+
+                // Notify validator
+                OnLEDColorsReceived?.Invoke(ledStateArray.leds);
             }
             else
             {

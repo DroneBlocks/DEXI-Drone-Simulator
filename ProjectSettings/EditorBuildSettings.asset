@@ -8,18 +8,21 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/DEXIGridScene.unity
     guid: 00cb4a5d8cb1f43cf86d4d1e6d61bdae
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/AprilTagNavigationScene.unity
     guid: ef5d549846fc540a69c8c0552c53c065
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/AVR2025.unity
     guid: 549d8111154e7b949a21b7be9dcc4bd1
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/AVR2026.unity
     guid: c420cd19e5a701d49add36493e80ff80
+  - enabled: 1
+    path: Assets/Scenes/GameMechanicsTest.unity
+    guid: ab8c877074de147378440c8495b0ca49
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
