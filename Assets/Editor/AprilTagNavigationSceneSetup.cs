@@ -49,7 +49,7 @@ public class AprilTagNavigationSceneSetup
         tagGen.centerGrid = true;
         tagGen.heightOffset = 0.001f; // Slightly above floor
         tagGen.tagSize = 0.15f;  // 6-inch tags
-        // Textures auto-loaded from Resources/AprilTags/
+        // Textures in Assets/Textures/AprilTags/, materials pre-baked by editor tool
 
         // --- DEXI Drone ---
         GameObject dexiPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/DEXI.prefab");

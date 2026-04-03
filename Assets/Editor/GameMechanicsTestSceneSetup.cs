@@ -275,8 +275,8 @@ public class GameMechanicsTestSceneSetup
         holder.transform.rotation = Quaternion.Euler(90f, 0f, 0f); // Face up
         holder.transform.localScale = new Vector3(TAG_SIZE, TAG_SIZE, TAG_SIZE);
 
-        // Load texture from Resources/YoloTargets/
-        string texAssetPath = $"Assets/Resources/YoloTargets/{resourceName}.png";
+        // Load texture from Textures/YoloTargets/
+        string texAssetPath = $"Assets/Textures/YoloTargets/{resourceName}.png";
         Texture2D tex = AssetDatabase.LoadAssetAtPath<Texture2D>(texAssetPath);
 
         if (tex != null)
