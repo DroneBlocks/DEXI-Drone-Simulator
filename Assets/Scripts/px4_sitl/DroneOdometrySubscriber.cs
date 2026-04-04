@@ -47,7 +47,7 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
     [Header("Smoothing Settings")]
     [SerializeField]
     [Tooltip("Enable position and rotation smoothing to reduce jitter")]
-    private bool enableSmoothing = false;
+    private bool enableSmoothing = true;
 
     [SerializeField]
     [Range(0.01f, 1f)]

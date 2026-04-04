@@ -61,6 +61,6 @@ public class DroneMotor : MonoBehaviour, IMotor
 
         // Apply rotation direction based on isClockwise property
         float direction = isClockwise ? 1f : -1f;
-        propeller.Rotate(Vector3.up, currentRotationSpeed * direction);
+        propeller.Rotate(Vector3.up, currentRotationSpeed * direction * Time.fixedDeltaTime);
     }
 }

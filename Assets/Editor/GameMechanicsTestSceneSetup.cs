@@ -112,7 +112,9 @@ public class GameMechanicsTestSceneSetup
             drone.name = "DEXI";
             drone.transform.position = new Vector3(0f, 0.5f, -4.0f);
 
-            // Add keyboard controller for testing without PX4/ROS
+            // ROS keyboard control (default) + free flight toggle (Tab)
+            if (drone.GetComponent<ROSKeyboardController>() == null)
+                drone.AddComponent<ROSKeyboardController>();
             if (drone.GetComponent<KeyboardDroneController>() == null)
                 drone.AddComponent<KeyboardDroneController>();
         }
@@ -121,6 +123,7 @@ public class GameMechanicsTestSceneSetup
             Debug.LogWarning("DEXI prefab not found at Assets/Prefabs/DEXI.prefab — add drone manually");
             drone = new GameObject("DEXI_Placeholder");
             drone.transform.position = new Vector3(0f, 0.5f, -4.0f);
+            drone.AddComponent<ROSKeyboardController>();
             drone.AddComponent<KeyboardDroneController>();
         }
 
@@ -184,7 +187,10 @@ public class GameMechanicsTestSceneSetup
         // Game Manager
         GameObject gmObj = new GameObject("GameManager");
         gmObj.AddComponent<GameManager>();
-        gmObj.AddComponent<LEDColorValidator>();
+
+        // Simulation Settings (frame rate cap)
+        GameObject simObj = new GameObject("SimulationSettings");
+        simObj.AddComponent<SimulationSettings>();
 
         // Runtime Materials
         GameObject rtMatObj = new GameObject("RuntimeMaterials");

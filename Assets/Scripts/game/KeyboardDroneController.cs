@@ -1,10 +1,16 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
-/// Simple keyboard drone controller for testing game mechanics without PX4/ROS.
-/// Press Tab to toggle between Keyboard and ROS mode.
+/// Toggles between ROS mode and free flight mode.
 ///
-/// Controls:
+/// ROS mode (default): Unity renders drone from odometry. Keyboard control
+/// is handled by ROSKeyboardController which sends commands via ROS.
+///
+/// Free flight mode (Tab): Disables odometry, gives direct keyboard control
+/// for testing game mechanics without PX4/ROS.
+///
+/// Free flight controls:
 ///   W/S        — Throttle up / down
 ///   A/D        — Yaw left / right
 ///   Up/Down    — Pitch forward / back
@@ -12,38 +18,25 @@ using UnityEngine;
 /// </summary>
 public class KeyboardDroneController : MonoBehaviour
 {
-    public enum ControlMode { ROS, Keyboard }
+    public enum ControlMode { ROS, FreeFlight }
 
     [Header("Mode")]
     [SerializeField] private ControlMode mode = ControlMode.ROS;
     public ControlMode Mode => mode;
 
-    [Header("Keyboard Control Settings")]
-    [Tooltip("Throttle speed (m/s)")]
+    [Header("Free Flight Settings")]
     public float throttleSpeed = 0.8f;
-
-    [Tooltip("Pitch/roll movement speed (m/s)")]
     public float moveSpeed = 1.0f;
-
-    [Tooltip("Yaw rotation speed (degrees/s)")]
     public float yawSpeed = 90f;
-
-    [Tooltip("Max pitch/roll tilt angle (degrees)")]
     public float maxTilt = 15f;
-
-    [Tooltip("How fast tilt returns to level (degrees/s)")]
     public float tiltReturnSpeed = 5f;
-
-    [Tooltip("Minimum altitude (meters)")]
     public float minAltitude = 0.05f;
 
-    // Components to disable/enable on toggle
     private DroneOdometrySubscriber odometrySub;
     private DroneController droneController;
     private Rigidbody rb;
     private DroneInputs droneInputs;
 
-    // Keyboard mode state
     private float currentYaw;
     private float currentPitch;
     private float currentRoll;
@@ -59,30 +52,33 @@ public class KeyboardDroneController : MonoBehaviour
 
     void Update()
     {
-        // Tab to toggle
-        if (Input.GetKeyDown(KeyCode.Tab))
+        var kb = Keyboard.current;
+        if (kb == null) return;
+
+        if (kb.tabKey.wasPressedThisFrame)
         {
             if (mode == ControlMode.ROS)
-                SwitchToKeyboard();
+                EnterFreeFlight();
             else
-                SwitchToROS();
+                EnterROSMode();
         }
 
-        if (mode == ControlMode.Keyboard)
-            HandleKeyboardInput();
+        if (mode == ControlMode.FreeFlight)
+        {
+            HandleFlightInput(kb);
+            HandleLEDInput(kb);
+        }
     }
 
-    void SwitchToKeyboard()
+    void EnterFreeFlight()
     {
-        mode = ControlMode.Keyboard;
+        mode = ControlMode.FreeFlight;
         currentYaw = transform.eulerAngles.y;
 
-        // Disable ROS-driven components
         if (odometrySub != null) odometrySub.enabled = false;
         if (droneController != null) droneController.enabled = false;
         if (droneInputs != null) droneInputs.enabled = false;
 
-        // Make rigidbody kinematic so we control position directly
         if (rb != null)
         {
             rb.isKinematic = true;
@@ -90,74 +86,97 @@ public class KeyboardDroneController : MonoBehaviour
             rb.angularVelocity = Vector3.zero;
         }
 
-        Debug.Log("KeyboardDroneController: Switched to KEYBOARD mode");
+        PX4StateManager.Instance.ArmingState = PX4StateManager.ARMING_STATE_ARMED;
+
+        if (GameManager.Instance != null && GameManager.Instance.State == GameManager.GameState.WaitingToStart)
+            GameManager.Instance.StartGame();
+
+        Debug.Log("FREE FLIGHT mode — WASD/arrows to fly");
     }
 
-    void SwitchToROS()
+    void EnterROSMode()
     {
         mode = ControlMode.ROS;
 
-        // Re-enable ROS-driven components
         if (odometrySub != null) odometrySub.enabled = true;
         if (droneController != null) droneController.enabled = true;
         if (droneInputs != null) droneInputs.enabled = true;
 
-        // Restore rigidbody
         if (rb != null)
             rb.isKinematic = false;
 
-        Debug.Log("KeyboardDroneController: Switched to ROS mode");
+        Debug.Log("ROS mode — drone controlled via ROS");
     }
 
-    void HandleKeyboardInput()
+    void HandleFlightInput(Keyboard kb)
     {
         float dt = Time.deltaTime;
 
-        // W/S — Throttle (altitude)
         float throttle = 0f;
-        if (Input.GetKey(KeyCode.W)) throttle = 1f;
-        if (Input.GetKey(KeyCode.S)) throttle = -1f;
+        if (kb.wKey.isPressed) throttle = 1f;
+        if (kb.sKey.isPressed) throttle = -1f;
 
-        // A/D — Yaw
-        if (Input.GetKey(KeyCode.A)) currentYaw -= yawSpeed * dt;
-        if (Input.GetKey(KeyCode.D)) currentYaw += yawSpeed * dt;
+        if (kb.aKey.isPressed) currentYaw -= yawSpeed * dt;
+        if (kb.dKey.isPressed) currentYaw += yawSpeed * dt;
 
-        // Up/Down arrows — Pitch (forward/back movement + visual tilt)
         float pitchInput = 0f;
-        if (Input.GetKey(KeyCode.UpArrow)) pitchInput = 1f;
-        if (Input.GetKey(KeyCode.DownArrow)) pitchInput = -1f;
+        if (kb.upArrowKey.isPressed) pitchInput = 1f;
+        if (kb.downArrowKey.isPressed) pitchInput = -1f;
 
-        // Left/Right arrows — Roll (strafe + visual tilt)
         float rollInput = 0f;
-        if (Input.GetKey(KeyCode.LeftArrow)) rollInput = 1f;
-        if (Input.GetKey(KeyCode.RightArrow)) rollInput = -1f;
+        if (kb.leftArrowKey.isPressed) rollInput = 1f;
+        if (kb.rightArrowKey.isPressed) rollInput = -1f;
 
-        // Tilt toward input, return to level when released
-        float targetPitch = pitchInput * maxTilt;
-        float targetRoll = rollInput * maxTilt;
-        currentPitch = Mathf.Lerp(currentPitch, targetPitch, dt * tiltReturnSpeed);
-        currentRoll = Mathf.Lerp(currentRoll, targetRoll, dt * tiltReturnSpeed);
+        currentPitch = Mathf.Lerp(currentPitch, pitchInput * maxTilt, dt * tiltReturnSpeed);
+        currentRoll = Mathf.Lerp(currentRoll, rollInput * maxTilt, dt * tiltReturnSpeed);
 
-        // Movement from pitch/roll (relative to yaw heading)
         Vector3 forward = Quaternion.Euler(0, currentYaw, 0) * Vector3.forward;
         Vector3 right = Quaternion.Euler(0, currentYaw, 0) * Vector3.right;
 
-        Vector3 move = Vector3.zero;
-        move += forward * pitchInput * moveSpeed * dt;
-        move -= right * rollInput * moveSpeed * dt;
-        move += Vector3.up * throttle * throttleSpeed * dt;
+        Vector3 move = forward * pitchInput * moveSpeed * dt
+                     - right * rollInput * moveSpeed * dt
+                     + Vector3.up * throttle * throttleSpeed * dt;
 
         Vector3 newPos = transform.position + move;
         newPos.y = Mathf.Max(newPos.y, minAltitude);
         transform.position = newPos;
-
-        // Apply rotation with tilt
         transform.rotation = Quaternion.Euler(currentPitch, currentYaw, currentRoll);
+    }
+
+    void HandleLEDInput(Keyboard kb)
+    {
+        if (GameManager.Instance == null || GameManager.Instance.State != GameManager.GameState.Running)
+            return;
+
+        Color? color = null;
+        string name = null;
+
+        if (kb.digit1Key.wasPressedThisFrame || kb.numpad1Key.wasPressedThisFrame) { color = Color.red; name = "RED"; }
+        if (kb.digit2Key.wasPressedThisFrame || kb.numpad2Key.wasPressedThisFrame) { color = Color.green; name = "GREEN"; }
+        if (kb.digit3Key.wasPressedThisFrame || kb.numpad3Key.wasPressedThisFrame) { color = Color.blue; name = "BLUE"; }
+
+        if (color == null) return;
+
+        var ledVis = FindFirstObjectByType<LEDRingVisualizer>();
+        if (ledVis != null) ledVis.SetAllLEDs(color.Value);
+
+        foreach (var target in GameManager.Instance.GetAllTargets())
+        {
+            if (!target.IsReal || target.IsScanned) continue;
+            if (Mathf.Abs(color.Value.r - target.expectedLEDColor.r) < 0.1f &&
+                Mathf.Abs(color.Value.g - target.expectedLEDColor.g) < 0.1f &&
+                Mathf.Abs(color.Value.b - target.expectedLEDColor.b) < 0.1f)
+            {
+                GameManager.Instance.ReportScan(target);
+                Debug.Log($"LED {name} matched {target.targetName}");
+                return;
+            }
+        }
+        Debug.Log($"LED {name} — no match");
     }
 
     void OnGUI()
     {
-        // Mode indicator in top-right
         GUIStyle style = new GUIStyle(GUI.skin.label)
         {
             fontSize = 16,
@@ -165,28 +184,22 @@ public class KeyboardDroneController : MonoBehaviour
             alignment = TextAnchor.UpperRight
         };
 
-        string modeText;
-        if (mode == ControlMode.Keyboard)
+        float x = Screen.width - 300;
+
+        if (mode == ControlMode.FreeFlight)
         {
             style.normal.textColor = Color.yellow;
-            modeText = "KEYBOARD MODE [Tab]";
+            GUI.Label(new Rect(x, 10, 290, 25), "FREE FLIGHT [Tab → ROS]", style);
+
+            GUIStyle small = new GUIStyle(GUI.skin.label) { fontSize = 12 };
+            small.normal.textColor = new Color(1, 1, 1, 0.5f);
+            GUI.Label(new Rect(x, 30, 290, 20), "WS: throttle  AD: yaw  Arrows: move", small);
+            GUI.Label(new Rect(x, 45, 290, 20), "1=RED  2=GREEN  3=BLUE", small);
         }
         else
         {
             style.normal.textColor = new Color(0.5f, 1f, 0.5f);
-            modeText = "ROS MODE [Tab]";
-        }
-
-        GUI.Label(new Rect(Screen.width - 260, 10, 250, 25), modeText, style);
-
-        // Controls hint in keyboard mode
-        if (mode == ControlMode.Keyboard)
-        {
-            GUIStyle smallStyle = new GUIStyle(GUI.skin.label) { fontSize = 12 };
-            smallStyle.normal.textColor = new Color(1, 1, 1, 0.5f);
-            float x = Screen.width - 260;
-            GUI.Label(new Rect(x, 35, 250, 20), "WS: throttle  AD: yaw  Arrows: pitch/roll", smallStyle);
-            GUI.Label(new Rect(x, 50, 250, 20), "1=RED  2=GREEN  3=BLUE (submit LED)", smallStyle);
+            GUI.Label(new Rect(x, 10, 290, 25), "ROS MODE [Tab → free flight]", style);
         }
     }
 }
