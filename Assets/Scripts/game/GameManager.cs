@@ -1,10 +1,12 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using System.Linq;
 
 /// <summary>
-/// Core game manager for the simulation challenge MVP.
+/// Core game manager for the simulation challenge.
 /// Handles target randomization, timer, scoring, and LED color coordination.
+/// Timer uses unscaledDeltaTime so Time.timeScale can't affect scoring.
 /// </summary>
 public class GameManager : MonoBehaviour
 {
@@ -39,7 +41,7 @@ public class GameManager : MonoBehaviour
     public System.Action<LandingZone> OnLandingDetected;
     public System.Action<FlyThroughGate> OnGateTriggered;
     public System.Action OnGameStarted;
-    public System.Action<float> OnGameCompleted; // passes final time
+    public System.Action<float> OnGameCompleted;
 
     private bool hasInitialized;
 
@@ -55,7 +57,6 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        // Randomize on first frame after all targets have registered via Start()
         if (!hasInitialized && allTargets.Count > 0)
         {
             hasInitialized = true;
@@ -64,54 +65,41 @@ public class GameManager : MonoBehaviour
 
         if (state == GameState.Running)
         {
-            elapsedTime += Time.deltaTime;
+            elapsedTime += Time.unscaledDeltaTime;
             CheckCompletion();
         }
+
+        var kb = Keyboard.current;
+        if (kb == null) return;
+        if (kb.rKey.wasPressedThisFrame)
+            ResetGame();
+        else if (kb.spaceKey.wasPressedThisFrame && state == GameState.WaitingToStart)
+            StartGame();
     }
 
-    /// <summary>
-    /// Get all registered targets (used by LEDColorValidator).
-    /// </summary>
     public List<ScanTarget> GetAllTargets() => allTargets;
 
-    /// <summary>
-    /// Register a scan target with the game manager.
-    /// Called by ScanTarget.Start().
-    /// </summary>
     public void RegisterTarget(ScanTarget target)
     {
         if (!allTargets.Contains(target))
             allTargets.Add(target);
     }
 
-    /// <summary>
-    /// Register a landing zone with the game manager.
-    /// Called by LandingZone.Start().
-    /// </summary>
     public void RegisterLandingZone(LandingZone zone)
     {
         if (!allLandingZones.Contains(zone))
             allLandingZones.Add(zone);
     }
 
-    /// <summary>
-    /// Register a fly-through gate with the game manager.
-    /// Called by FlyThroughGate.Start().
-    /// </summary>
     public void RegisterGate(FlyThroughGate gate)
     {
         if (!allGates.Contains(gate))
             allGates.Add(gate);
     }
 
-    /// <summary>
-    /// Randomize which targets are real vs fake.
-    /// Call this before starting the game or from the editor setup.
-    /// </summary>
     [ContextMenu("Randomize Targets")]
     public void RandomizeTargets()
     {
-        // Group targets by their group name
         var groups = allTargets.GroupBy(t => t.groupName);
 
         foreach (var group in groups)
@@ -119,14 +107,11 @@ public class GameManager : MonoBehaviour
             var targets = group.ToList();
             if (targets.Count == 0) continue;
 
-            // Shuffle positions within the group
             ShufflePositions(targets);
 
-            // Reset all to fake
             foreach (var t in targets)
                 t.SetReal(false);
 
-            // Pick one random target to be real
             int realIndex = Random.Range(0, targets.Count);
             targets[realIndex].SetReal(true);
 
@@ -135,32 +120,22 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Shuffle the world positions of targets within a group.
-    /// The GameObjects swap positions so a different target is at each slot every round.
-    /// </summary>
     private void ShufflePositions(List<ScanTarget> targets)
     {
-        // Collect current positions
         Vector3[] positions = targets.Select(t => t.transform.position).ToArray();
 
-        // Fisher-Yates shuffle
         for (int i = positions.Length - 1; i > 0; i--)
         {
             int j = Random.Range(0, i + 1);
             (positions[i], positions[j]) = (positions[j], positions[i]);
         }
 
-        // Apply shuffled positions
         for (int i = 0; i < targets.Count; i++)
         {
             targets[i].transform.position = positions[i];
         }
     }
 
-    /// <summary>
-    /// Start the game timer.
-    /// </summary>
     [ContextMenu("Start Game")]
     public void StartGame()
     {
@@ -170,7 +145,6 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // Auto-randomize if not already done
         if (allTargets.All(t => !t.IsReal))
             RandomizeTargets();
 
@@ -184,12 +158,6 @@ public class GameManager : MonoBehaviour
         OnGameStarted?.Invoke();
     }
 
-    /// <summary>
-    /// Called by ScanDetector when drone scans a target.
-    /// </summary>
-    /// <summary>
-    /// Called by LEDColorValidator when a correct LED color is submitted.
-    /// </summary>
     public void ReportScan(ScanTarget target)
     {
         if (state != GameState.Running) return;
@@ -204,9 +172,6 @@ public class GameManager : MonoBehaviour
         OnTargetScanned?.Invoke(target);
     }
 
-    /// <summary>
-    /// Called by LandingZone when drone lands.
-    /// </summary>
     public void ReportLanding(LandingZone zone)
     {
         if (state != GameState.Running) return;
@@ -221,13 +186,8 @@ public class GameManager : MonoBehaviour
         OnLandingDetected?.Invoke(zone);
     }
 
-    /// <summary>
-    /// Called by FlyThroughGate when drone flies through.
-    /// </summary>
     public void ReportGate(FlyThroughGate gate)
     {
-        if (state == GameState.WaitingToStart)
-            StartGame();
         if (state != GameState.Running) return;
 
         gatesCompleted++;
@@ -236,9 +196,6 @@ public class GameManager : MonoBehaviour
         OnGateTriggered?.Invoke(gate);
     }
 
-    /// <summary>
-    /// Reset the game to initial state.
-    /// </summary>
     [ContextMenu("Reset Game")]
     public void ResetGame()
     {
@@ -292,7 +249,6 @@ public class GameManager : MonoBehaviour
 
     void OnGUI()
     {
-        // Simple HUD overlay
         GUIStyle style = new GUIStyle(GUI.skin.label)
         {
             fontSize = 18,
@@ -302,10 +258,9 @@ public class GameManager : MonoBehaviour
 
         float y = 60f;
 
-        // State
         string stateText = state switch
         {
-            GameState.WaitingToStart => "READY — Fly over a target to begin",
+            GameState.WaitingToStart => "READY — Press [Space] to start",
             GameState.Running => "RUNNING",
             GameState.Completed => "COMPLETED!",
             _ => ""
@@ -313,11 +268,9 @@ public class GameManager : MonoBehaviour
         GUI.Label(new Rect(10, y, 500, 28), stateText, style);
         y += 26;
 
-        // Timer
         GUI.Label(new Rect(10, y, 300, 28), $"Time: {elapsedTime:F1}s", style);
         y += 26;
 
-        // Scan progress per group
         GUIStyle completedStyle = new GUIStyle(style);
         completedStyle.normal.textColor = Color.green;
         GUIStyle pendingStyle = new GUIStyle(style);
@@ -343,7 +296,6 @@ public class GameManager : MonoBehaviour
         }
         y += 4;
 
-        // Gates
         foreach (var gate in allGates)
         {
             string label = gate.IsTriggered
@@ -354,7 +306,6 @@ public class GameManager : MonoBehaviour
         }
         if (allGates.Count > 0) y += 4;
 
-        // Landing
         foreach (var zone in allLandingZones)
         {
             string label = zone.IsLanded
@@ -372,7 +323,7 @@ public class GameManager : MonoBehaviour
             GUI.Label(new Rect(10, y + 10, 500, 35), $"FINAL TIME: {elapsedTime:F2}s", bigStyle);
         }
 
-        // Answer Key — anchored to bottom-left
+        // Answer Key
         int groupCount = groups.Count();
         float answerLineHeight = 30f;
         float answerY = Screen.height - 40 - (groupCount + 1) * answerLineHeight;
@@ -400,18 +351,8 @@ public class GameManager : MonoBehaviour
             answerY += answerLineHeight;
         }
 
-        // Controls hint
         GUIStyle smallStyle = new GUIStyle(GUI.skin.label) { fontSize = 11 };
         smallStyle.normal.textColor = new Color(1, 1, 1, 0.6f);
         GUI.Label(new Rect(10, Screen.height - 30, 400, 25), "[R] Reset  [Space] Start", smallStyle);
-
-        // Handle input
-        if (Event.current.type == EventType.KeyDown)
-        {
-            if (Event.current.keyCode == KeyCode.R)
-                ResetGame();
-            else if (Event.current.keyCode == KeyCode.Space && state == GameState.WaitingToStart)
-                StartGame();
-        }
     }
 }

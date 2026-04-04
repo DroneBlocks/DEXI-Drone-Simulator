@@ -46,10 +46,6 @@ public class ScanDetector : MonoBehaviour
 
                 if (currentDwell >= scanDwellTime)
                 {
-                    // Auto-start game on first scan
-                    if (GameManager.Instance != null && GameManager.Instance.State == GameManager.GameState.WaitingToStart)
-                        GameManager.Instance.StartGame();
-
                     if (GameManager.Instance != null)
                         GameManager.Instance.ReportScan(detected);
 

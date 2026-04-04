@@ -10,11 +10,9 @@ public class DroneMotor : MonoBehaviour, IMotor
 
     [Header("Propeller Properties")]
     [SerializeField]
-    private Transform propeller;
+    private float baseRotationSpeed = 1500f;
     [SerializeField]
-    private float baseRotationSpeed = 30f;
-    [SerializeField]
-    private float maxRotationSpeed = 300f;
+    private float maxRotationSpeed = 15000f;
     [SerializeField]
     private bool isClockwise = true; // true for clockwise, false for counter-clockwise
 
@@ -43,11 +41,15 @@ public class DroneMotor : MonoBehaviour, IMotor
         HandlePropellers(inputs.Throttle);
     }
 
+    private Transform propeller;
+
     void HandlePropellers(float throttle)
     {
         if(!propeller)
         {
-            return;
+            if (transform.childCount > 0)
+                propeller = transform.GetChild(0);
+            if (!propeller) return;
         }
 
         // Don't rotate propellers if the drone is not armed
@@ -61,6 +63,6 @@ public class DroneMotor : MonoBehaviour, IMotor
 
         // Apply rotation direction based on isClockwise property
         float direction = isClockwise ? 1f : -1f;
-        propeller.Rotate(Vector3.up, currentRotationSpeed * direction);
+        propeller.Rotate(Vector3.up, currentRotationSpeed * direction * Time.fixedDeltaTime);
     }
 }

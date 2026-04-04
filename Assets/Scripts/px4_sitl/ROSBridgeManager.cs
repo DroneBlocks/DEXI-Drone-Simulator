@@ -457,6 +457,39 @@ public class ROSBridgeManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Call a ROS service and invoke callback with the response.
+    /// </summary>
+    public void CallService(string service, string serviceType, object args, System.Action<JObject> callback = null)
+    {
+        if (!isConnected || websocket == null)
+        {
+            Debug.LogWarning($"Cannot call service {service}: not connected");
+            return;
+        }
+
+        string id = $"call_service:{service}:{UnityEngine.Random.Range(0, 99999)}";
+
+        // Register callback for response
+        if (callback != null)
+            pendingServiceCalls[id] = callback;
+
+        var callMessage = new
+        {
+            op = "call_service",
+            id = id,
+            service = service,
+            type = serviceType,
+            args = args
+        };
+
+        string jsonMessage = JsonConvert.SerializeObject(callMessage);
+        Debug.Log($"Calling service: {service}");
+        websocket.SendText(jsonMessage);
+    }
+
+    private Dictionary<string, System.Action<JObject>> pendingServiceCalls = new Dictionary<string, System.Action<JObject>>();
+
+    /// <summary>
     /// Publish a raw JSON message (for when you need custom serialization)
     /// </summary>
     public async Task PublishRaw(string jsonMessage)
@@ -476,10 +509,25 @@ public class ROSBridgeManager : MonoBehaviour
         {
             var jsonMessage = JObject.Parse(message);
 
-            // Check if it's a status message
-            if (jsonMessage["op"]?.ToString() == "status")
+            string op = jsonMessage["op"]?.ToString();
+
+            // Handle status messages
+            if (op == "status")
             {
                 Debug.Log($"ROS Bridge status: {message}");
+                return;
+            }
+
+            // Handle service responses
+            if (op == "service_response")
+            {
+                string id = jsonMessage["id"]?.ToString();
+                if (id != null && pendingServiceCalls.ContainsKey(id))
+                {
+                    var callback = pendingServiceCalls[id];
+                    pendingServiceCalls.Remove(id);
+                    callback?.Invoke(jsonMessage["values"] as JObject);
+                }
                 return;
             }
 

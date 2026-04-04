@@ -66,7 +66,7 @@ public class LEDRingSubscriber : MonoBehaviour, IROSSubscriber
     }
 
     /// <summary>
-    /// Event fired when LED colors are received. Used by LEDColorValidator.
+    /// Event fired when LED colors are received.
     /// </summary>
     public System.Action<LEDState[]> OnLEDColorsReceived;
 
