@@ -35,6 +35,13 @@ public class LandingZone : MonoBehaviour
         padRenderer = GetComponent<Renderer>();
         SetPadColor(idleColor);
 
+        // Rigidbody needed so trigger events fire even when drone is kinematic
+        if (GetComponent<Rigidbody>() == null)
+        {
+            Rigidbody rb = gameObject.AddComponent<Rigidbody>();
+            rb.isKinematic = true;
+        }
+
         // Ensure at least one trigger collider exists
         bool hasTrigger = false;
         foreach (var col in GetComponents<Collider>())

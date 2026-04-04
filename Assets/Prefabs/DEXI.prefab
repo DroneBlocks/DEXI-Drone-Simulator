@@ -67,11 +67,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 235378323dc134cfe9fe9c027e53753b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxPower: 10
-  propeller: {fileID: 3461727517363148426}
-  baseRotationSpeed: 30
-  maxRotationSpeed: 300
-  isClockwise: 0
+  maxPower: 4
+  propeller: {fileID: 0}
+  baseRotationSpeed: 1500
+  maxRotationSpeed: 15000
+  isClockwise: 1
 --- !u!1 &2535532337874976686
 GameObject:
   m_ObjectHideFlags: 0
@@ -535,11 +535,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 235378323dc134cfe9fe9c027e53753b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxPower: 10
-  propeller: {fileID: 8512845503166253593}
-  baseRotationSpeed: 30
-  maxRotationSpeed: 300
-  isClockwise: 0
+  maxPower: 4
+  propeller: {fileID: 0}
+  baseRotationSpeed: 1500
+  maxRotationSpeed: 15000
+  isClockwise: 1
 --- !u!1 &5013342387719749173
 GameObject:
   m_ObjectHideFlags: 0
@@ -607,10 +607,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 235378323dc134cfe9fe9c027e53753b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxPower: 10
-  propeller: {fileID: 6845031188029924789}
-  baseRotationSpeed: 30
-  maxRotationSpeed: 300
+  maxPower: 4
+  propeller: {fileID: 0}
+  baseRotationSpeed: 1500
+  maxRotationSpeed: 15000
   isClockwise: 1
 --- !u!1 &5687174681963695733
 GameObject:
@@ -987,10 +987,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 235378323dc134cfe9fe9c027e53753b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxPower: 10
-  propeller: {fileID: 3165993778620405197}
-  baseRotationSpeed: 30
-  maxRotationSpeed: 300
+  maxPower: 4
+  propeller: {fileID: 0}
+  baseRotationSpeed: 1500
+  maxRotationSpeed: 15000
   isClockwise: 1
 --- !u!1001 &5171907642274707087
 PrefabInstance:

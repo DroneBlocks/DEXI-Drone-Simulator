@@ -76,6 +76,10 @@ public class FlyThroughGate : MonoBehaviour
         triggerZone.transform.localPosition = new Vector3(0, frameBorder + openingHeight / 2, 0);
         triggerZone.transform.localRotation = Quaternion.identity;
 
+        // Rigidbody needed so trigger events fire even when drone is kinematic
+        Rigidbody triggerRb = triggerZone.AddComponent<Rigidbody>();
+        triggerRb.isKinematic = true;
+
         BoxCollider trigger = triggerZone.AddComponent<BoxCollider>();
         trigger.isTrigger = true;
         trigger.size = new Vector3(openingWidth * 0.9f, openingHeight * 0.9f, wallThickness * 4);

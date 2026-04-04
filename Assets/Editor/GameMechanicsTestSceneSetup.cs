@@ -112,6 +112,10 @@ public class GameMechanicsTestSceneSetup
             drone.name = "DEXI";
             drone.transform.position = new Vector3(0f, 0.5f, -4.0f);
 
+            // Ensure vehicle status subscriber is on the drone (for armed state)
+            if (drone.GetComponent<VehicleStatusSubscriber>() == null)
+                drone.AddComponent<VehicleStatusSubscriber>();
+
             // ROS keyboard control (default) + free flight toggle (Tab)
             if (drone.GetComponent<ROSKeyboardController>() == null)
                 drone.AddComponent<ROSKeyboardController>();
