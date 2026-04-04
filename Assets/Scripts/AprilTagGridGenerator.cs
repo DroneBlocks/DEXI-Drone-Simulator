@@ -30,11 +30,11 @@ public class AprilTagGridGenerator : MonoBehaviour
     public float tagSize = 0.15f;
 
     [Header("Materials")]
-    [Tooltip("Array of materials for tags. If empty, auto-loads textures from Resources/AprilTags/")]
+    [Tooltip("Array of materials for tags. If empty, uses pre-baked materials from Materials/AprilTags/")]
     public Material[] tagMaterials;
 
-    [Header("Auto-Load Textures")]
-    [Tooltip("Resource path prefix for auto-loading tag textures (e.g. 'AprilTags/apriltag_')")]
+    [Header("Auto-Load Textures (editor only)")]
+    [Tooltip("Resource path prefix for texture names (used by editor tools)")]
     public string textureResourcePrefix = "AprilTags/apriltag_";
 
     [Tooltip("Number of digits for zero-padded texture names (e.g. 5 for apriltag_00000)")]

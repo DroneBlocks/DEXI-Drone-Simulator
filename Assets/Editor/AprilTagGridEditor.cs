@@ -10,7 +10,7 @@ using System.IO;
 public class AprilTagGridEditor
 {
     private const string MaterialFolder = "Assets/Materials/AprilTags";
-    private const string TextureFolder = "Assets/Resources/AprilTags";
+    private const string TextureFolder = "Assets/Textures/AprilTags";
 
     [MenuItem("DEXI/Generate AprilTag Grid In Scene")]
     public static void GenerateFromMenu()
@@ -158,15 +158,9 @@ public class AprilTagGridEditor
         if (existing != null)
             return existing;
 
-        // Load texture
-        string textureName = prefix + tagId.ToString().PadLeft(digits, '0');
-        Texture2D texture = Resources.Load<Texture2D>(textureName);
-        if (texture == null)
-        {
-            // Try direct path
-            string texPath = $"{TextureFolder}/apriltag_{tagId:D5}.png";
-            texture = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
-        }
+        // Load texture from asset path
+        string texPath = $"{TextureFolder}/apriltag_{tagId:D5}.png";
+        Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
 
         if (texture == null)
         {
