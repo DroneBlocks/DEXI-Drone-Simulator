@@ -34,18 +34,14 @@ public class GameManager : MonoBehaviour
     private List<LandingZone> allLandingZones = new List<LandingZone>();
     private List<FlyThroughGate> allGates = new List<FlyThroughGate>();
 
-    private int targetsScanned;
+    private bool foundApriltag = false;
+    private bool foundBridgeClass = false;
+    private bool foundCabinClass = false;
+
     private bool landingComplete;
     private int gatesCompleted;
 
     private ApriltagSubscriber apriltagSubscriber;
-
-    // Events
-    public System.Action<ScanTarget> OnTargetScanned;
-    public System.Action<LandingZone> OnLandingDetected;
-    public System.Action<FlyThroughGate> OnGateTriggered;
-    public System.Action OnGameStarted;
-    public System.Action<float> OnGameCompleted;
 
     private bool hasInitialized;
 
@@ -71,6 +67,7 @@ public class GameManager : MonoBehaviour
     {
         if (array.detections[0].id == targetApriltagID)
         {
+            foundApriltag = true;
             Debug.Log("Target Apriltag detected by DEXI!");
         }
     }
@@ -167,8 +164,7 @@ public class GameManager : MonoBehaviour
                 }
             }
 
-            Debug.Log($"GameManager: Group '{group.Key}' — target '{target.targetName}' is REAL " +
-                      $"at position ({target.transform.position.x:F1}, {target.transform.position.z:F1})");
+            Debug.Log($"GameManager: Group '{group.Key}' — target '{target.targetName}' is REAL " + $"at position ({target.transform.position.x:F1}, {target.transform.position.z:F1})");
         }
     }
 
@@ -198,30 +194,51 @@ public class GameManager : MonoBehaviour
         }
 
         if (allTargets.All(t => !t.IsReal))
+        {
             RandomizeTargets();
+        }
+
+        foundApriltag = false;
+        foundBridgeClass = false;
+        foundCabinClass = false;
 
         elapsedTime = 0f;
-        targetsScanned = 0;
         landingComplete = false;
         gatesCompleted = 0;
         state = GameState.Running;
 
         Debug.Log("GameManager: Game STARTED");
-        OnGameStarted?.Invoke();
     }
 
-    public void ReportScan(ScanTarget target)
+    [ContextMenu("Reset Game")]
+    public void ResetGame()
     {
-        if (state != GameState.Running) return;
-        if (target.IsScanned) return;
+        state = GameState.WaitingToStart;
+        elapsedTime = 0f;
+        landingComplete = false;
+        gatesCompleted = 0;
 
-        target.MarkScanned();
-        targetsScanned++;
+        foundApriltag = false;
+        foundBridgeClass = false;
+        foundCabinClass = false;
 
-        Debug.Log($"GameManager: Target validated — '{target.targetName}' (group: {target.groupName}). " +
-                  $"LED: {ColorToName(target.expectedLEDColor)}. [{targetsScanned} scanned]");
+        foreach (var t in allTargets)
+        {
+            t.ResetState();
+        }
 
-        OnTargetScanned?.Invoke(target);
+        foreach (var z in allLandingZones)
+        {
+            z.ResetState();
+        }
+
+        foreach (var g in allGates)
+        {
+            g.ResetState();
+        }
+
+        RandomizeTargets();
+        Debug.Log("GameManager: Game RESET");
     }
 
     public void ReportLanding(LandingZone zone)
@@ -234,8 +251,6 @@ public class GameManager : MonoBehaviour
 
         SetDroneLEDColor(landingConfirmColor);
         Debug.Log($"GameManager: Landing confirmed on '{zone.zoneName}'. LED → {ColorToName(landingConfirmColor)}");
-
-        OnLandingDetected?.Invoke(zone);
     }
 
     public void ReportGate(FlyThroughGate gate)
@@ -244,34 +259,12 @@ public class GameManager : MonoBehaviour
 
         gatesCompleted++;
         Debug.Log($"GameManager: Gate '{gate.gateName}' completed! [{gatesCompleted}/{allGates.Count}]");
-
-        OnGateTriggered?.Invoke(gate);
-    }
-
-    [ContextMenu("Reset Game")]
-    public void ResetGame()
-    {
-        state = GameState.WaitingToStart;
-        elapsedTime = 0f;
-        targetsScanned = 0;
-        landingComplete = false;
-        gatesCompleted = 0;
-
-        foreach (var t in allTargets)
-            t.ResetState();
-        foreach (var z in allLandingZones)
-            z.ResetState();
-        foreach (var g in allGates)
-            g.ResetState();
-
-        RandomizeTargets();
-        Debug.Log("GameManager: Game RESET");
     }
 
     private void CheckCompletion()
     {
         int realTargetCount = allTargets.Count(t => t.IsReal);
-        bool allRealScanned = targetsScanned >= realTargetCount && realTargetCount > 0;
+        bool allRealScanned = foundApriltag && foundCabinClass && foundBridgeClass;
         bool allLandingsDone = allLandingZones.Count == 0 || landingComplete;
         bool allGatesDone = allGates.Count == 0 || gatesCompleted >= allGates.Count;
 
@@ -279,7 +272,6 @@ public class GameManager : MonoBehaviour
         {
             state = GameState.Completed;
             Debug.Log($"GameManager: Game COMPLETED in {elapsedTime:F2}s");
-            OnGameCompleted?.Invoke(elapsedTime);
         }
     }
 
@@ -334,7 +326,7 @@ public class GameManager : MonoBehaviour
         foreach (var group in groups)
         {
             ScanTarget realTarget = group.FirstOrDefault(t => t.IsReal);
-            bool found = realTarget != null && realTarget.IsScanned;
+            bool found = realTarget != null;
             if (found)
             {
                 GUIStyle colorStyle = new GUIStyle(style);

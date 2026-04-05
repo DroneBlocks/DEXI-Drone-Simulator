@@ -119,8 +119,6 @@ public class GameMechanicsTestSceneSetup
             // ROS keyboard control (default) + free flight toggle (Tab)
             if (drone.GetComponent<ROSKeyboardController>() == null)
                 drone.AddComponent<ROSKeyboardController>();
-            if (drone.GetComponent<KeyboardDroneController>() == null)
-                drone.AddComponent<KeyboardDroneController>();
         }
         else
         {
@@ -128,7 +126,6 @@ public class GameMechanicsTestSceneSetup
             drone = new GameObject("DEXI_Placeholder");
             drone.transform.position = new Vector3(0f, 0.5f, -4.0f);
             drone.AddComponent<ROSKeyboardController>();
-            drone.AddComponent<KeyboardDroneController>();
         }
 
         // --- Main Camera ---

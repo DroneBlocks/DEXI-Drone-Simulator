@@ -39,10 +39,6 @@ public class ROSKeyboardController : MonoBehaviour
 
     void Update()
     {
-        var kbc = GetComponent<KeyboardDroneController>();
-        if (kbc != null && kbc.Mode == KeyboardDroneController.ControlMode.FreeFlight)
-            return;
-
         if (!ROSBridgeManager.Instance.IsConnected)
             return;
 
@@ -175,10 +171,6 @@ public class ROSKeyboardController : MonoBehaviour
 
     void OnGUI()
     {
-        var kbc = GetComponent<KeyboardDroneController>();
-        if (kbc != null && kbc.Mode == KeyboardDroneController.ControlMode.FreeFlight)
-            return;
-
         if (!ROSBridgeManager.Instance.IsConnected)
             return;
 

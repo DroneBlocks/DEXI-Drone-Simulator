@@ -86,7 +86,7 @@ public class ApriltagSubscriber : MonoBehaviour, IROSSubscriber
         {
             var apriltagArray = JsonConvert.DeserializeObject<ApriltagDetectionArray>(message);
 
-            if (apriltagArray != null && apriltagArray.detections != null)
+            if (apriltagArray != null && apriltagArray.detections.Length > 0)
             {
                 OnApriltagDetectionsReceived?.Invoke(apriltagArray);
             }
@@ -94,13 +94,13 @@ public class ApriltagSubscriber : MonoBehaviour, IROSSubscriber
             {
                 if (apriltagArray == null)
                 {
-                    Debug.LogError("Failed to parse LED state message");
+                    Debug.LogError("Failed to parse Apriltag Detection message");
                 }
             }
         }
         catch (Exception e)
         {
-            Debug.LogError($"Error processing LED state message: {e.Message}\nMessage was: {message}");
+            Debug.LogError($"Error processing Apriltag Detection message: {e.Message}\nMessage was: {message}");
         }
     }
 

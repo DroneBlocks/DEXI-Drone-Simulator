@@ -36,7 +36,6 @@ public class ScanTarget : MonoBehaviour
     public YoloTargetPlace yoloPlace = YoloTargetPlace.Cabin;
 
     public bool IsReal => isReal;
-    public bool IsScanned => isScanned;
 
     private Renderer targetRenderer;
     private Material originalMaterial;
@@ -82,20 +81,12 @@ public class ScanTarget : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Mark this target as having been scanned by the drone.
-    /// </summary>
-    public void MarkScanned()
-    {
-        isScanned = true;
-    }
 
     /// <summary>
     /// Reset to initial state for a new round.
     /// </summary>
     public void ResetState()
     {
-        isScanned = false;
         isReal = false;
 
         if (targetRenderer != null && originalMaterial != null)
