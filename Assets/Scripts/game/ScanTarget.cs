@@ -8,6 +8,7 @@ using UnityEngine;
 public class ScanTarget : MonoBehaviour
 {
     public enum TargetType { AprilTag, YoloImage }
+    public enum YoloTargetPlace { Cabin, Bridge }
 
     [Header("Target Identity")]
     [Tooltip("Which group this target belongs to (e.g. 'apriltags' or 'yolo_vehicles')")]
@@ -26,6 +27,13 @@ public class ScanTarget : MonoBehaviour
     [Header("State (set by GameManager)")]
     [SerializeField] private bool isReal;
     [SerializeField] private bool isScanned;
+
+    [Header("Apriltag Settings")]
+    public int apriltagID = 0;
+
+    [Header("YOLO Settings")]
+    public string yoloLabel = "";
+    public YoloTargetPlace yoloPlace = YoloTargetPlace.Cabin;
 
     public bool IsReal => isReal;
     public bool IsScanned => isScanned;
@@ -68,6 +76,7 @@ public class ScanTarget : MonoBehaviour
                     blankMaterial.mainTexture = null;
                     blankMaterial.color = new Color(0.3f, 0.3f, 0.3f);
                 }
+
                 targetRenderer.material = blankMaterial;
             }
         }
@@ -89,9 +98,10 @@ public class ScanTarget : MonoBehaviour
         isScanned = false;
         isReal = false;
 
-        // Restore original appearance before next randomization
         if (targetRenderer != null && originalMaterial != null)
+        {
             targetRenderer.material = originalMaterial;
+        }
     }
 
     void OnDrawGizmos()

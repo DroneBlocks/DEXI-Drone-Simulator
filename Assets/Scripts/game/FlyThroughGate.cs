@@ -40,7 +40,9 @@ public class FlyThroughGate : MonoBehaviour
         BuildGate();
 
         if (GameManager.Instance != null)
+        {
             GameManager.Instance.RegisterGate(this);
+        }
     }
 
     void BuildGate()

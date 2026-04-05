@@ -26,15 +26,19 @@ public class GameManager : MonoBehaviour
     [Tooltip("LED color shown when landing is confirmed")]
     public Color landingConfirmColor = Color.yellow;
 
-    // Registered targets, zones, and gates
+    private int targetApriltagID = 0;
+    private string targetBridgeClass = "";
+    private string targetCabinClass = "";
+
     private List<ScanTarget> allTargets = new List<ScanTarget>();
     private List<LandingZone> allLandingZones = new List<LandingZone>();
     private List<FlyThroughGate> allGates = new List<FlyThroughGate>();
 
-    // Tracking
     private int targetsScanned;
     private bool landingComplete;
     private int gatesCompleted;
+
+    private ApriltagSubscriber apriltagSubscriber;
 
     // Events
     public System.Action<ScanTarget> OnTargetScanned;
@@ -52,7 +56,23 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+        
         Instance = this;
+
+        apriltagSubscriber = GetComponent<ApriltagSubscriber>();
+    }
+
+    private void Start()
+    {
+        apriltagSubscriber.OnApriltagDetectionsReceived += HandleApriltagDetection;
+    }
+
+    private void HandleApriltagDetection(ApriltagDetectionArray array)
+    {
+        if (array.detections[0].id == targetApriltagID)
+        {
+            Debug.Log("Target Apriltag detected by DEXI!");
+        }
     }
 
     void Update()
@@ -69,13 +89,16 @@ public class GameManager : MonoBehaviour
             CheckCompletion();
         }
 
-
         var kb = Keyboard.current;
         if (kb == null) return;
         if (kb.rKey.wasPressedThisFrame)
+        {
             ResetGame();
+        }
         else if (kb.spaceKey.wasPressedThisFrame && state == GameState.WaitingToStart)
+        {
             StartGame();
+        }
     }
 
     public List<ScanTarget> GetAllTargets() => allTargets;
@@ -83,19 +106,25 @@ public class GameManager : MonoBehaviour
     public void RegisterTarget(ScanTarget target)
     {
         if (!allTargets.Contains(target))
+        {
             allTargets.Add(target);
+        }
     }
 
     public void RegisterLandingZone(LandingZone zone)
     {
         if (!allLandingZones.Contains(zone))
+        {
             allLandingZones.Add(zone);
+        }
     }
 
     public void RegisterGate(FlyThroughGate gate)
     {
         if (!allGates.Contains(gate))
+        {
             allGates.Add(gate);
+        }
     }
 
     [ContextMenu("Randomize Targets")]
@@ -111,13 +140,35 @@ public class GameManager : MonoBehaviour
             ShufflePositions(targets);
 
             foreach (var t in targets)
+            {
                 t.SetReal(false);
+            }
 
             int realIndex = Random.Range(0, targets.Count);
-            targets[realIndex].SetReal(true);
+            ScanTarget target = targets[realIndex];
 
-            Debug.Log($"GameManager: Group '{group.Key}' — target '{targets[realIndex].targetName}' is REAL " +
-                      $"at position ({targets[realIndex].transform.position.x:F1}, {targets[realIndex].transform.position.z:F1})");
+            target.SetReal(true);
+
+            if (target.targetType == ScanTarget.TargetType.AprilTag)
+            {
+                targetApriltagID = target.apriltagID;
+            }
+            else if (target.targetType == ScanTarget.TargetType.YoloImage)
+            {
+                switch (target.yoloPlace)
+                {
+                    case ScanTarget.YoloTargetPlace.Bridge:
+                        targetBridgeClass = target.yoloLabel;
+                    break;
+
+                    case ScanTarget.YoloTargetPlace.Cabin:
+                        targetCabinClass = target.yoloLabel;
+                    break;
+                }
+            }
+
+            Debug.Log($"GameManager: Group '{group.Key}' — target '{target.targetName}' is REAL " +
+                      $"at position ({target.transform.position.x:F1}, {target.transform.position.z:F1})");
         }
     }
 
@@ -236,7 +287,9 @@ public class GameManager : MonoBehaviour
     {
         var ledVis = FindFirstObjectByType<LEDRingVisualizer>();
         if (ledVis != null)
+        {
             ledVis.SetAllLEDs(color);
+        }
     }
 
     private string ColorToName(Color c)

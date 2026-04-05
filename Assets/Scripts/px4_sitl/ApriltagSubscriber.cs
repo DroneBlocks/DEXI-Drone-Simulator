@@ -2,7 +2,46 @@ using UnityEngine;
 using System;
 using Newtonsoft.Json;
 
-// TODO: build out apriltag detection array class
+[Serializable]
+public class ApriltagTime
+{
+    public int sec;
+    public long nanosec;
+}
+
+[Serializable]
+public class ApriltagHeader
+{
+    public ApriltagTime stamp;
+    public string frame_id;
+}
+
+[Serializable]
+public class ApriltagPoint2D
+{
+    public double x;
+    public double y;
+}
+
+[Serializable]
+public class ApriltagDetection
+{
+    public string family;
+    public int id;
+    public int hamming;
+    public float goodness;
+    public float decision_margin;
+    public ApriltagPoint2D centre;
+    public ApriltagPoint2D[] corners;
+    public double[] homography;
+}
+
+[Serializable]
+public class ApriltagDetectionArray
+{
+    public ApriltagHeader header;
+    public ApriltagDetection[] detections;
+}
 
 public class ApriltagSubscriber : MonoBehaviour, IROSSubscriber
 {
@@ -15,6 +54,8 @@ public class ApriltagSubscriber : MonoBehaviour, IROSSubscriber
     private string messageType = "apriltag_msgs/msg/AprilTagDetectionArray";
 
     private string _namespacedTopicPath;
+
+    public System.Action<ApriltagDetectionArray> OnApriltagDetectionsReceived;
 
     public string TopicPath
     {
@@ -43,15 +84,15 @@ public class ApriltagSubscriber : MonoBehaviour, IROSSubscriber
     {
         try
         {
-            var ledStateArray = JsonConvert.DeserializeObject<LEDStateArray>(message);
+            var apriltagArray = JsonConvert.DeserializeObject<ApriltagDetectionArray>(message);
 
-            if (ledStateArray != null && ledStateArray.leds != null)
+            if (apriltagArray != null && apriltagArray.detections != null)
             {
-
+                OnApriltagDetectionsReceived?.Invoke(apriltagArray);
             }
             else
             {
-                if (ledStateArray == null)
+                if (apriltagArray == null)
                 {
                     Debug.LogError("Failed to parse LED state message");
                 }
