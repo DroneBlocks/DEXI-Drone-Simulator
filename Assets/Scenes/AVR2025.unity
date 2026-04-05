@@ -3889,6 +3889,7 @@ GameObject:
   - component: {fileID: 2118132797}
   - component: {fileID: 2118132796}
   - component: {fileID: 2118132798}
+  - component: {fileID: 2118132799}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -3940,6 +3941,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ApriltagSubscriber
   baseTopicPath: /apriltag_detections
   messageType: apriltag_msgs/msg/AprilTagDetectionArray
+--- !u!114 &2118132799
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2118132795}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4b4007e35499df4aa0e7d337d65f48a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YoloSubscriber
+  baseTopicPath: /yolo_detections
+  messageType: dexi_interfaces/msg/YoloDetectionArray
 --- !u!4 &2241703165062491
 Transform:
   m_ObjectHideFlags: 0

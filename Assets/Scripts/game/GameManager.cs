@@ -42,6 +42,7 @@ public class GameManager : MonoBehaviour
     private int gatesCompleted;
 
     private ApriltagSubscriber apriltagSubscriber;
+    private YoloSubscriber yoloSubscriber;
 
     private bool hasInitialized;
 
@@ -56,11 +57,13 @@ public class GameManager : MonoBehaviour
         Instance = this;
 
         apriltagSubscriber = GetComponent<ApriltagSubscriber>();
+        yoloSubscriber = GetComponent<YoloSubscriber>();
     }
 
     private void Start()
     {
         apriltagSubscriber.OnApriltagDetectionsReceived += HandleApriltagDetection;
+        yoloSubscriber.OnYoloDetectionsReceived += HandleYoloDetection;
     }
 
     private void HandleApriltagDetection(ApriltagDetectionArray array)
@@ -69,6 +72,23 @@ public class GameManager : MonoBehaviour
         {
             foundApriltag = true;
             Debug.Log("Target Apriltag detected by DEXI!");
+        }
+    }
+
+    private void HandleYoloDetection(YoloDetectionArray array)
+    {
+        foreach (var det in array.detections)
+        {
+            if (det.class_name == targetBridgeClass)
+            {
+                foundBridgeClass = true;
+                Debug.Log("Target Bridge class detected by DEXI!");
+            }
+            else if (det.class_name == targetCabinClass)
+            {
+                foundCabinClass = true;
+                Debug.Log("Target Cabin class detected by DEXI!");
+            }
         }
     }
 
@@ -97,8 +117,6 @@ public class GameManager : MonoBehaviour
             StartGame();
         }
     }
-
-    public List<ScanTarget> GetAllTargets() => allTargets;
 
     public void RegisterTarget(ScanTarget target)
     {

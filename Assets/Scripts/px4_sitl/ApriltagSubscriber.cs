@@ -3,16 +3,16 @@ using System;
 using Newtonsoft.Json;
 
 [Serializable]
-public class ApriltagTime
+public class RosTime
 {
     public int sec;
     public long nanosec;
 }
 
 [Serializable]
-public class ApriltagHeader
+public class RosHeader
 {
-    public ApriltagTime stamp;
+    public RosTime stamp;
     public string frame_id;
 }
 
@@ -39,7 +39,7 @@ public class ApriltagDetection
 [Serializable]
 public class ApriltagDetectionArray
 {
-    public ApriltagHeader header;
+    public RosHeader header;
     public ApriltagDetection[] detections;
 }
 
