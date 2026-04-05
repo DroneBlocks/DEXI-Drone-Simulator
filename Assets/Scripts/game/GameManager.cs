@@ -69,6 +69,7 @@ public class GameManager : MonoBehaviour
             CheckCompletion();
         }
 
+
         var kb = Keyboard.current;
         if (kb == null) return;
         if (kb.rKey.wasPressedThisFrame)

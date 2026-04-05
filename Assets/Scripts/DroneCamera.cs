@@ -97,15 +97,17 @@ public class DroneCamera : MonoBehaviour
 
     void UpdateFollowView()
     {
-        // Handle orbit input when right mouse button is held
         if (Input.GetMouseButton(1))
         {
-            orbitX += Input.GetAxis("Mouse X") * orbitSpeed * Time.deltaTime;
-            orbitY -= Input.GetAxis("Mouse Y") * orbitSpeed * Time.deltaTime;
+            float maxDelta = 5f;
+            float mouseX = Mathf.Clamp(Input.GetAxis("Mouse X"), -maxDelta, maxDelta);
+            float mouseY = Mathf.Clamp(Input.GetAxis("Mouse Y"), -maxDelta, maxDelta);
+
+            orbitX += mouseX * orbitSpeed * Time.deltaTime;
+            orbitY -= mouseY * orbitSpeed * Time.deltaTime;
             orbitY = Mathf.Clamp(orbitY, minVerticalAngle, maxVerticalAngle);
         }
 
-        // Handle zoom with mouse scroll wheel
         float scrollInput = Input.GetAxis("Mouse ScrollWheel");
         if (scrollInput != 0f)
         {
@@ -113,17 +115,13 @@ public class DroneCamera : MonoBehaviour
             followDistance = Mathf.Clamp(followDistance, minZoomDistance, maxZoomDistance);
         }
 
-        // Calculate orbit position
         Quaternion rotation = Quaternion.Euler(orbitY, orbitX, 0);
-        Vector3 targetPos = target.position;
-        Vector3 offset = rotation * new Vector3(0, height, -followDistance);
-        Vector3 desiredPosition = targetPos + offset;
+        Vector3 desiredPosition = target.position + rotation * new Vector3(0, height, -followDistance);
 
-        // Move smoothly to position
         transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
 
-        // Look at target
-        transform.LookAt(targetPos);
+        Quaternion desiredRotation = Quaternion.LookRotation(target.position - transform.position);
+        transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, smoothSpeed * Time.deltaTime);
     }
 
     void UpdateFPVView()

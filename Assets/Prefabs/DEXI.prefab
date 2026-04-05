@@ -68,7 +68,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxPower: 4
-  propeller: {fileID: 0}
   baseRotationSpeed: 1500
   maxRotationSpeed: 15000
   isClockwise: 1
@@ -134,6 +133,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -155,6 +156,7 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
@@ -242,6 +244,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -263,6 +267,7 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
@@ -350,6 +355,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -371,6 +378,7 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
@@ -536,7 +544,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxPower: 4
-  propeller: {fileID: 0}
   baseRotationSpeed: 1500
   maxRotationSpeed: 15000
   isClockwise: 1
@@ -608,7 +615,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxPower: 4
-  propeller: {fileID: 0}
   baseRotationSpeed: 1500
   maxRotationSpeed: 15000
   isClockwise: 1
@@ -674,6 +680,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -695,6 +703,7 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
@@ -736,6 +745,8 @@ GameObject:
   - component: {fileID: 3183072113209585758}
   - component: {fileID: 4586986501844537080}
   - component: {fileID: 2552943520280880897}
+  - component: {fileID: 3106092502893135010}
+  - component: {fileID: 1586642348024430793}
   m_Layer: 0
   m_Name: DEXI
   m_TagString: Untagged
@@ -822,10 +833,10 @@ Rigidbody:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6560164126179222949}
-  serializedVersion: 4
+  serializedVersion: 5
   m_Mass: 1
-  m_Drag: 0.5
-  m_AngularDrag: 0.05
+  m_LinearDamping: 0.5
+  m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -901,7 +912,7 @@ MonoBehaviour:
   minimumHeight: 0.05
   landedAltitudeThreshold: 0.15
   landedVelocityThreshold: 0.1
-  enableSmoothing: 0
+  enableSmoothing: 1
   positionSmoothingFactor: 0.15
   rotationSmoothingFactor: 0.1
   baseTopicPath: /fmu/out/vehicle_odometry
@@ -920,6 +931,47 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   baseTopicPath: /fmu/out/vehicle_status_v1
   messageType: px4_msgs/msg/VehicleStatus
+--- !u!114 &3106092502893135010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6560164126179222949}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a83c51918939408baeed7da5e73f364, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  xySpeed: 0.5
+  zSpeed: 0.3
+  yawRate: 30
+  velocityInterval: 0.1
+  offboardTopic: /dexi/offboard_manager
+  offboardMsgType: dexi_interfaces/msg/OffboardNavCommand
+  serviceEndpoint: /dexi/execute_blockly_command
+  serviceType: dexi_interfaces/srv/ExecuteBlocklyCommand
+  inFlight: 0
+  isArming: 0
+--- !u!114 &1586642348024430793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6560164126179222949}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9315662065dc645798b8e06821195842, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mode: 0
+  throttleSpeed: 0.8
+  moveSpeed: 1
+  yawSpeed: 90
+  maxTilt: 15
+  tiltReturnSpeed: 5
+  minAltitude: 0.05
 --- !u!1 &7224323116105723929
 GameObject:
   m_ObjectHideFlags: 0
@@ -988,7 +1040,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxPower: 4
-  propeller: {fileID: 0}
   baseRotationSpeed: 1500
   maxRotationSpeed: 15000
   isClockwise: 1

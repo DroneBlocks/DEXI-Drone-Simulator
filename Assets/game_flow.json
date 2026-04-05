@@ -1,0 +1,329 @@
+[
+    {
+        "id": "b2b32fa65bacec7c",
+        "type": "tab",
+        "label": "Sim Game",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "f77d1d786ab9d052",
+        "type": "function",
+        "z": "b2b32fa65bacec7c",
+        "name": "get april tag id",
+        "func": "if (msg.payload.detections.length > 0) {\n    msg.payload = msg.payload.detections[0].id\n} else {\n    msg.payload = \"None\"\n}\n\nreturn msg",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 480,
+        "wires": [
+            [
+                "f3020cff263bda99",
+                "e869da03ac7631cf"
+            ]
+        ]
+    },
+    {
+        "id": "3ae42ba38eaf28c8",
+        "type": "ros2-subscribe",
+        "z": "b2b32fa65bacec7c",
+        "server": "27129f80a96ce509",
+        "topicname": "/apriltag_detections",
+        "messagetype": "apriltag_msgs/msg/AprilTagDetectionArray",
+        "x": 430,
+        "y": 480,
+        "wires": [
+            [
+                "f77d1d786ab9d052"
+            ]
+        ]
+    },
+    {
+        "id": "f3020cff263bda99",
+        "type": "switch",
+        "z": "b2b32fa65bacec7c",
+        "name": "apriltag id",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "0",
+                "vt": "num"
+            },
+            {
+                "t": "eq",
+                "v": "1",
+                "vt": "num"
+            },
+            {
+                "t": "eq",
+                "v": "2",
+                "vt": "num"
+            },
+            {
+                "t": "eq",
+                "v": "None",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 4,
+        "x": 920,
+        "y": 440,
+        "wires": [
+            [
+                "fd88959a247a5c13"
+            ],
+            [
+                "e432c90b54966c36"
+            ],
+            [
+                "791a8ca006cee332"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "791a8ca006cee332",
+        "type": "led",
+        "z": "b2b32fa65bacec7c",
+        "name": "Blue LED",
+        "color": "blue",
+        "x": 1180,
+        "y": 580,
+        "wires": [
+            [
+                "9417a2f1bc878c8f"
+            ]
+        ]
+    },
+    {
+        "id": "fd88959a247a5c13",
+        "type": "led",
+        "z": "b2b32fa65bacec7c",
+        "name": "Red LED",
+        "color": "red",
+        "x": 1180,
+        "y": 420,
+        "wires": [
+            [
+                "9417a2f1bc878c8f"
+            ]
+        ]
+    },
+    {
+        "id": "c5bede7f735d4d2e",
+        "type": "function",
+        "z": "b2b32fa65bacec7c",
+        "name": "get object",
+        "func": "if (msg.payload.detections.length > 0) {\n    msg.payload = msg.payload.detections[0].class_name\n} else {\n    msg.payload = \"None\"\n}\n\nreturn msg",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 600,
+        "wires": [
+            [
+                "10c87740ca4e0ba1",
+                "6310df33dd8dfad1",
+                "e869da03ac7631cf"
+            ]
+        ]
+    },
+    {
+        "id": "1bcf0dece1d2032c",
+        "type": "ros2-subscribe",
+        "z": "b2b32fa65bacec7c",
+        "server": "27129f80a96ce509",
+        "topicname": "/yolo_detections",
+        "messagetype": "apriltag_msgs/msg/AprilTagDetectionArray",
+        "x": 420,
+        "y": 600,
+        "wires": [
+            [
+                "c5bede7f735d4d2e"
+            ]
+        ]
+    },
+    {
+        "id": "10c87740ca4e0ba1",
+        "type": "switch",
+        "z": "b2b32fa65bacec7c",
+        "name": "animals",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "cat",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "dog",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "bird",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "None",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 4,
+        "x": 920,
+        "y": 560,
+        "wires": [
+            [
+                "fd88959a247a5c13"
+            ],
+            [
+                "e432c90b54966c36"
+            ],
+            [
+                "791a8ca006cee332"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "9417a2f1bc878c8f",
+        "type": "ros2-service-call",
+        "z": "b2b32fa65bacec7c",
+        "server": "27129f80a96ce509",
+        "x": 1440,
+        "y": 480,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e432c90b54966c36",
+        "type": "led",
+        "z": "b2b32fa65bacec7c",
+        "name": "Green LED",
+        "color": "green",
+        "x": 1190,
+        "y": 500,
+        "wires": [
+            [
+                "9417a2f1bc878c8f"
+            ]
+        ]
+    },
+    {
+        "id": "6310df33dd8dfad1",
+        "type": "switch",
+        "z": "b2b32fa65bacec7c",
+        "name": "vehicles",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "car",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "truck",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "motorcycle",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "None",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 4,
+        "x": 920,
+        "y": 640,
+        "wires": [
+            [
+                "fd88959a247a5c13"
+            ],
+            [
+                "e432c90b54966c36"
+            ],
+            [
+                "791a8ca006cee332"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "e869da03ac7631cf",
+        "type": "trigger",
+        "z": "b2b32fa65bacec7c",
+        "name": "No detection timeout",
+        "op1": "",
+        "op2": "true",
+        "op1type": "nul",
+        "op2type": "bool",
+        "duration": "2",
+        "extend": true,
+        "overrideDelay": false,
+        "units": "s",
+        "reset": "",
+        "bytopic": "topic",
+        "topic": "payload",
+        "outputs": 1,
+        "x": 920,
+        "y": 740,
+        "wires": [
+            [
+                "af35b5867ab146b1"
+            ]
+        ]
+    },
+    {
+        "id": "af35b5867ab146b1",
+        "type": "led",
+        "z": "b2b32fa65bacec7c",
+        "name": "Yellow LED",
+        "color": "yellow",
+        "x": 1180,
+        "y": 740,
+        "wires": [
+            [
+                "9417a2f1bc878c8f"
+            ]
+        ]
+    },
+    {
+        "id": "27129f80a96ce509",
+        "type": "ros2-websocket-server",
+        "url": "${ROS2_WEBSOCKET_URL}"
+    },
+    {
+        "id": "ac522a9be5e40b28",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "@droneblocks/node-red-dexi": "0.0.17"
+        }
+    }
+]
