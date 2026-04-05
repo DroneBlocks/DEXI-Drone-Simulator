@@ -45,10 +45,14 @@ public class ScanTarget : MonoBehaviour
     {
         targetRenderer = GetComponent<Renderer>();
         if (targetRenderer != null)
+        {
             originalMaterial = targetRenderer.material;
+        }
 
         if (GameManager.Instance != null)
+        {
             GameManager.Instance.RegisterTarget(this);
+        }
     }
 
     /// <summary>

@@ -25,16 +25,24 @@ public class DroneController : BaseRigidBody
     private float finalRoll;
     private float finalYaw;
 
+    private DroneOdometrySubscriber odometry;
+
 
     private void Start()
     {
         inputs = GetComponent<DroneInputs>();
         motors = GetComponentsInChildren<IMotor>().ToList<IMotor>();
+        odometry = GetComponent<DroneOdometrySubscriber>();
     }
-
 
     protected override void HandlePhysics()
     {
+        if (ROSBridgeManager.Instance.IsConnected && odometry != null && odometry.HasReceivedData)
+        {
+            odometry.ApplyPhysics(rb);
+            return;
+        }
+
         HandleMotors();
         HandleControls();
     }
@@ -45,7 +53,6 @@ public class DroneController : BaseRigidBody
         {
             motor.UpdateMotor(rb, inputs);
         }
-        
     }
 
     protected virtual void HandleControls()
@@ -77,7 +84,4 @@ public class DroneController : BaseRigidBody
         // Apply combined torque
         rb.AddTorque(pitchTorque + rollTorque + yawTorque, ForceMode.Force);
     }
-    
-    
-    
 }

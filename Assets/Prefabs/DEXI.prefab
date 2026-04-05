@@ -458,7 +458,7 @@ MonoBehaviour:
   lightIntensity: 1
   lightRange: 0.2
   useEmissiveMaterial: 1
-  emissiveIntensity: 2
+  emissiveIntensity: 5
   defaultColor: {r: 0, g: 1, b: 0, a: 1}
   defaultBrightness: 128
 --- !u!114 &3878175370314293680
@@ -746,7 +746,7 @@ GameObject:
   - component: {fileID: 4586986501844537080}
   - component: {fileID: 2552943520280880897}
   - component: {fileID: 3106092502893135010}
-  - component: {fileID: 1586642348024430793}
+  - component: {fileID: 6054977267072099961}
   m_Layer: 0
   m_Name: DEXI
   m_TagString: Untagged
@@ -802,7 +802,7 @@ MonoBehaviour:
   m_ActionEvents: []
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
-  m_DefaultActionMap: 
+  m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
 --- !u!114 &2782228944229957416
@@ -912,9 +912,9 @@ MonoBehaviour:
   minimumHeight: 0.05
   landedAltitudeThreshold: 0.15
   landedVelocityThreshold: 0.1
-  enableSmoothing: 1
-  positionSmoothingFactor: 0.15
-  rotationSmoothingFactor: 0.1
+  enableSmoothing: 0
+  positionSmoothingFactor: 0.403
+  rotationSmoothingFactor: 0.01
   baseTopicPath: /fmu/out/vehicle_odometry
   messageType: px4_msgs/msg/VehicleOdometry
 --- !u!114 &2552943520280880897
@@ -953,7 +953,7 @@ MonoBehaviour:
   serviceType: dexi_interfaces/srv/ExecuteBlocklyCommand
   inFlight: 0
   isArming: 0
---- !u!114 &1586642348024430793
+--- !u!114 &6054977267072099961
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -962,16 +962,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 6560164126179222949}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9315662065dc645798b8e06821195842, type: 3}
+  m_Script: {fileID: 11500000, guid: 87a508183697e4ee8a5d44881399fa21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mode: 0
-  throttleSpeed: 0.8
-  moveSpeed: 1
-  yawSpeed: 90
-  maxTilt: 15
-  tiltReturnSpeed: 5
-  minAltitude: 0.05
+  baseTopicPath: /fmu/out/vehicle_status_v1
+  messageType: px4_msgs/msg/VehicleStatus
 --- !u!1 &7224323116105723929
 GameObject:
   m_ObjectHideFlags: 0

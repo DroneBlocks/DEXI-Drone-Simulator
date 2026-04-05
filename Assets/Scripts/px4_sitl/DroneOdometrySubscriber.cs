@@ -6,257 +6,100 @@ using Newtonsoft.Json;
 public class VehicleOdometry
 {
     public long timestamp;
-    public float[] position = new float[3];  // x, y, z
-    public float[] q = new float[4];  // x, y, z, w (quaternion)
-    public float[] velocity = new float[3];  // vx, vy, vz
-    public float[] angular_velocity = new float[3];  // vx, vy, vz
+    public float[] position = new float[3];
+    public float[] q = new float[4];
+    public float[] velocity = new float[3];
+    public float[] angular_velocity = new float[3];
 }
 
-/// <summary>
-/// Drone Odometry Subscriber that uses centralized ROSBridgeManager
-/// </summary>
 public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
 {
     [Header("Drone Settings")]
-    [SerializeField]
-    private Transform droneTransform;
+    [SerializeField] private Transform droneTransform;
+    [SerializeField] private Vector3 positionOffset = Vector3.zero;
+    [SerializeField] private Vector3 rotationOffset = Vector3.zero;
 
-    [SerializeField]
-    private bool useLocalPosition = true;
-
-    [SerializeField]
-    private Vector3 positionOffset = Vector3.zero;
-
-    [SerializeField]
-    private Vector3 rotationOffset = Vector3.zero;
+    [Header("Physics Tracking")]
+    [SerializeField] private float positionSmoothSpeed = 15f;
+    [SerializeField] private float rotationSmoothSpeed = 15f;
+    [SerializeField] private float messageTimeoutSeconds = 0.5f;
 
     [Header("Floor Constraint")]
-    [SerializeField]
-    [Tooltip("Minimum Y position (floor level) to prevent drone from going through the ground")]
-    private float minimumHeight = 0.05f;
-
-    [Header("Landed Detection")]
-    [SerializeField]
-    [Tooltip("Snap to ground when altitude below this and velocity near zero")]
-    private float landedAltitudeThreshold = 0.15f;
-
-    [SerializeField]
-    [Tooltip("Velocity magnitude below this is considered stationary")]
-    private float landedVelocityThreshold = 0.1f;
-
-    [Header("Smoothing Settings")]
-    [SerializeField]
-    [Tooltip("Enable position and rotation smoothing to reduce jitter")]
-    private bool enableSmoothing = true;
-
-    [SerializeField]
-    [Range(0.01f, 1f)]
-    [Tooltip("Higher values = faster response but more jitter. Lower values = smoother but more lag.")]
-    private float positionSmoothingFactor = 0.15f;
-
-    [SerializeField]
-    [Range(0.01f, 1f)]
-    [Tooltip("Higher values = faster response but more jitter. Lower values = smoother but more lag.")]
-    private float rotationSmoothingFactor = 0.1f;
+    [SerializeField] private float minimumHeight = 0.05f;
+    [SerializeField] private float landedAltitudeThreshold = 0.15f;
+    [SerializeField] private float landedVelocityThreshold = 0.1f;
 
     [Header("ROS Topic Configuration")]
-    [SerializeField]
-    [Tooltip("Base topic path without namespace (namespace is applied automatically from ROSBridgeManager)")]
-    private string baseTopicPath = "/fmu/out/vehicle_odometry";
+    [SerializeField] private string baseTopicPath = "/fmu/out/vehicle_odometry";
+    [SerializeField] private string messageType = "px4_msgs/msg/VehicleOdometry";
 
-    [SerializeField]
-    private string messageType = "px4_msgs/msg/VehicleOdometry";
+    public Vector3 TargetPosition { get; private set; }
+    public Quaternion TargetRotation { get; private set; } = Quaternion.identity;
+    public bool HasReceivedData { get; private set; }
 
-    // Target values received from ROS
-    private Vector3 targetPosition;
-    private Quaternion targetRotation = Quaternion.identity;
+    private float timeSinceLastMessage;
+    private bool isFirstData = true;
 
-    // Current smoothed values
-    private Vector3 currentSmoothedPosition;
-    private Quaternion currentSmoothedRotation = Quaternion.identity;
-
-    private bool isFirstUpdate = true;
-    private bool hasReceivedData = false;
-
-    // Cached namespaced topic path
     private string _namespacedTopicPath;
-
-    // IROSSubscriber implementation
-    public string TopicPath
-    {
-        get
-        {
-            // Cache the namespaced topic path on first access
-            if (_namespacedTopicPath == null)
-            {
-                _namespacedTopicPath = ROSBridgeManager.Instance.ApplyNamespace(baseTopicPath);
-            }
-            return _namespacedTopicPath;
-        }
-    }
+    public string TopicPath => _namespacedTopicPath ??= ROSBridgeManager.Instance.ApplyNamespace(baseTopicPath);
     public string MessageType => messageType;
 
-    private void OnEnable()
+    private void OnEnable() => ROSBridgeManager.Instance.RegisterSubscriber(this);
+    private void OnDisable() => ROSBridgeManager.Instance.UnregisterSubscriber(this);
+
+    public void ApplyPhysics(Rigidbody rb)
     {
-        // Register with the ROSBridgeManager
-        ROSBridgeManager.Instance.RegisterSubscriber(this);
-    }
+        if (!HasReceivedData || rb == null) return;
 
-    private void OnDisable()
-    {
-        // Unregister from the ROSBridgeManager
-        ROSBridgeManager.Instance.UnregisterSubscriber(this);
-    }
+        timeSinceLastMessage += Time.fixedDeltaTime;
+        if (timeSinceLastMessage > messageTimeoutSeconds) return;
 
-    private void Update()
-    {
-        if (!hasReceivedData) return;
+        rb.useGravity = false;
 
-        if (enableSmoothing)
-        {
-            if (isFirstUpdate)
-            {
-                // Initialize smoothed values on first update
-                currentSmoothedPosition = targetPosition;
-                currentSmoothedRotation = targetRotation;
-                isFirstUpdate = false;
-            }
-            else
-            {
-                // Frame-rate independent smoothing
-                // Adjust factor to be relative to a reference frame rate (e.g., 60 FPS) to maintain similar "feel" to previous setup
-                // or just treat the factor as a speed. 
-                // Using the Lerp time adjustment formula: t_adjusted = 1 - Pow(1 - factor, dt * 60)
-                
-                float posT = 1.0f - Mathf.Pow(1.0f - positionSmoothingFactor, Time.deltaTime * 60.0f);
-                float rotT = 1.0f - Mathf.Pow(1.0f - rotationSmoothingFactor, Time.deltaTime * 60.0f);
+        Vector3 positionError = TargetPosition - rb.position;
+        rb.linearVelocity = positionError / Time.fixedDeltaTime * Mathf.Clamp01(Time.fixedDeltaTime * positionSmoothSpeed);
 
-                currentSmoothedPosition = Vector3.Lerp(currentSmoothedPosition, targetPosition, posT);
-                currentSmoothedRotation = Quaternion.Slerp(currentSmoothedRotation, targetRotation, rotT);
-            }
-
-            ApplyTransform(currentSmoothedPosition, currentSmoothedRotation);
-        }
-        else
-        {
-            // Direct update
-            ApplyTransform(targetPosition, targetRotation);
-        }
-    }
-
-    private void ApplyTransform(Vector3 pos, Quaternion rot)
-    {
-        if (droneTransform == null) return;
-
-        if (useLocalPosition)
-        {
-            droneTransform.localPosition = pos;
-            droneTransform.localRotation = rot;
-        }
-        else
-        {
-            droneTransform.position = pos;
-            droneTransform.rotation = rot;
-        }
+        rb.MoveRotation(Quaternion.Slerp(rb.rotation, TargetRotation, Time.fixedDeltaTime * rotationSmoothSpeed));
+        rb.angularVelocity = Vector3.zero;
     }
 
     public void OnMessageReceived(string message)
     {
         try
         {
-            // Parse the VehicleOdometry message
             var odometry = JsonConvert.DeserializeObject<VehicleOdometry>(message);
+            if (odometry == null || !PX4StateManager.Instance.IsArmed) return;
 
-            if (odometry != null)
+            Vector3 newPosition = new Vector3(
+                odometry.position[1],
+                -odometry.position[2],
+                odometry.position[0]
+            ) + positionOffset;
+
+            float velocityMagnitude = new Vector3(odometry.velocity[0], odometry.velocity[1], odometry.velocity[2]).magnitude;
+            bool isLanded = newPosition.y < landedAltitudeThreshold && velocityMagnitude < landedVelocityThreshold;
+            newPosition.y = isLanded ? minimumHeight : Mathf.Max(newPosition.y, minimumHeight);
+
+            if (float.IsNaN(odometry.q[0]))
             {
-                // Freeze position/rotation when disarmed to prevent drift
-                if (!PX4StateManager.Instance.IsArmed)
-                {
-                    return;
-                }
-
-                // Parse Position
-                // PX4: NED (North-East-Down) to Unity: Right-Up-Forward
-                Vector3 newPosition = new Vector3(
-                    odometry.position[1],  // East -> X (Right)
-                    -odometry.position[2], // Down -> -Y (Up)
-                    odometry.position[0]   // North -> Z (Forward)
-                );
-
-                // Apply position offset
-                newPosition += positionOffset;
-
-                // Calculate velocity magnitude (NED to Unity conversion not needed for magnitude)
-                float velocityMagnitude = Mathf.Sqrt(
-                    odometry.velocity[0] * odometry.velocity[0] +
-                    odometry.velocity[1] * odometry.velocity[1] +
-                    odometry.velocity[2] * odometry.velocity[2]
-                );
-
-                // Detect landed state: low altitude + low velocity = snap to ground
-                bool isLanded = newPosition.y < landedAltitudeThreshold && velocityMagnitude < landedVelocityThreshold;
-
-                // Control Rigidbody based on landed state
-                Rigidbody rb = droneTransform != null ? droneTransform.GetComponent<Rigidbody>() : null;
-                if (rb != null)
-                {
-                    if (isLanded && !rb.isKinematic)
-                    {
-                        rb.isKinematic = true;
-                        rb.linearVelocity = Vector3.zero;
-                        rb.angularVelocity = Vector3.zero;
-                    }
-                    else if (!isLanded && rb.isKinematic)
-                    {
-                        rb.isKinematic = false;
-                    }
-                }
-
-                if (isLanded)
-                {
-                    // Snap to ground when landed
-                    newPosition.y = minimumHeight;
-                }
-                else
-                {
-                    // Clamp to floor to prevent drone from going through ground
-                    newPosition.y = Mathf.Max(newPosition.y, minimumHeight);
-                }
-
-                // Parse Rotation
-                if (!float.IsNaN(odometry.q[0]))
-                {
-                    // Convert from PX4 NED frame to Unity's coordinate system
-                    Quaternion px4Rotation = new Quaternion(
-                        odometry.q[2],   // y (East) -> x (Right)
-                        -odometry.q[3],  // z (Down) -> -y (Up)
-                        odometry.q[1],   // x (North) -> z (Forward)
-                        -odometry.q[0]   // w (scalar) - negated for handedness conversion
-                    );
-
-                    // Normalize the quaternion to ensure it's valid
-                    px4Rotation.Normalize();
-
-                    // Apply coordinate system alignment and offset
-                    Quaternion newRotation = px4Rotation * Quaternion.Euler(rotationOffset);
-
-                    // Check for quaternion flip (shortest path continuity)
-                    // We check against the LATEST TARGET, not the smoothed value, to ensure continuity in the target stream
-                    if (hasReceivedData && Quaternion.Dot(targetRotation, newRotation) < 0)
-                    {
-                        newRotation = new Quaternion(-newRotation.x, -newRotation.y, -newRotation.z, -newRotation.w);
-                    }
-
-                    // Update targets atomically
-                    targetPosition = newPosition;
-                    targetRotation = newRotation;
-                    hasReceivedData = true;
-                }
-                else
-                {
-                    Debug.LogWarning("Received invalid quaternion (NaN)");
-                }
+                Debug.LogWarning("Received invalid quaternion (NaN)");
+                return;
             }
+
+            Quaternion newRotation = new Quaternion(odometry.q[2], -odometry.q[3], odometry.q[1], -odometry.q[0]);
+            newRotation.Normalize();
+            newRotation *= Quaternion.Euler(rotationOffset);
+
+            if (HasReceivedData && Quaternion.Dot(TargetRotation, newRotation) < 0)
+                newRotation = new Quaternion(-newRotation.x, -newRotation.y, -newRotation.z, -newRotation.w);
+
+            if (isFirstData)
+                isFirstData = false;
+
+            timeSinceLastMessage = 0f;
+            TargetPosition = newPosition;
+            TargetRotation = newRotation;
+            HasReceivedData = true;
         }
         catch (Exception e)
         {
@@ -264,15 +107,12 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
         }
     }
 
-    public void OnSubscribed()
-    {
-        Debug.Log($"Successfully subscribed to {TopicPath}");
-    }
+    public void OnSubscribed() => Debug.Log($"Successfully subscribed to {TopicPath}");
 
     public void OnDisconnected()
     {
         Debug.Log($"Disconnected from {TopicPath}");
-        isFirstUpdate = true; // Reset on disconnect
-        hasReceivedData = false;
+        HasReceivedData = false;
+        isFirstData = true;
     }
 }

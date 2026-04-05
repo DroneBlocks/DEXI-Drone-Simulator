@@ -19,10 +19,11 @@ public class DroneMotor : MonoBehaviour, IMotor
 
     public void UpdateMotor(Rigidbody rb, DroneInputs inputs)
     {
+        HandlePropellers(inputs.Throttle);
+
         // Don't apply forces when disarmed
         if (!PX4StateManager.Instance.IsArmed)
         {
-            HandlePropellers(inputs.Throttle);
             return;
         }
 
@@ -37,8 +38,6 @@ public class DroneMotor : MonoBehaviour, IMotor
         motorForce = transform.up * ((rb.mass * Physics.gravity.magnitude + finalDiff) + (inputs.Throttle * maxPower)) / 4f;
 
         rb.AddForce(motorForce, ForceMode.Force);
-
-        HandlePropellers(inputs.Throttle);
     }
 
     private Transform propeller;

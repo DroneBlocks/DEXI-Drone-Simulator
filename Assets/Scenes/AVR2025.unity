@@ -253,11 +253,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &27559910 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6560164126179222949, guid: de9434e62061f41baa532af060266786, type: 3}
-  m_PrefabInstance: {fileID: 1814547486}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &57138118
 GameObject:
   m_ObjectHideFlags: 0
@@ -1409,8 +1404,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c25d4ed5bab846ca83811f59e7e60c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rosbridge_url: ws://178.156.235.39:9090
-  webgl_rosbridge_url: ws://178.156.235.39:9090
+  rosbridge_url: ws://178.156.148.14:9090
+  webgl_rosbridge_url: ws://178.156.148.14:9090
   rosbridge_port: 9090
   autoConnectOnStart: 1
   namespacePrefix: 
@@ -2014,20 +2009,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6162944281411833189, guid: de9434e62061f41baa532af060266786, type: 3}
   m_PrefabInstance: {fileID: 1814547486}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &672044086
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 27559910}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 87a508183697e4ee8a5d44881399fa21, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  baseTopicPath: /fmu/out/vehicle_status_v1
-  messageType: px4_msgs/msg/VehicleStatus
 --- !u!1 &684547596
 GameObject:
   m_ObjectHideFlags: 0
@@ -3451,61 +3432,9 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 24984742466205762, guid: de9434e62061f41baa532af060266786, type: 3}
-      propertyPath: ledSize
-      value: 0.04
-      objectReference: {fileID: 0}
-    - target: {fileID: 24984742466205762, guid: de9434e62061f41baa532af060266786, type: 3}
-      propertyPath: ringRadius
-      value: 0.25
-      objectReference: {fileID: 0}
-    - target: {fileID: 24984742466205762, guid: de9434e62061f41baa532af060266786, type: 3}
-      propertyPath: enableLights
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 24984742466205762, guid: de9434e62061f41baa532af060266786, type: 3}
-      propertyPath: emissiveIntensity
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 24984742466205762, guid: de9434e62061f41baa532af060266786, type: 3}
-      propertyPath: useEmissiveMaterial
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 24984742466205762, guid: de9434e62061f41baa532af060266786, type: 3}
-      propertyPath: webglEmissiveIntensity
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 2147707813631023739, guid: de9434e62061f41baa532af060266786, type: 3}
-      propertyPath: m_Drag
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 2147707813631023739, guid: de9434e62061f41baa532af060266786, type: 3}
-      propertyPath: m_Mass
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4586986501844537080, guid: de9434e62061f41baa532af060266786, type: 3}
-      propertyPath: debugRotation
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4586986501844537080, guid: de9434e62061f41baa532af060266786, type: 3}
-      propertyPath: enableSmoothing
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4586986501844537080, guid: de9434e62061f41baa532af060266786, type: 3}
-      propertyPath: yawSmoothingFactor
-      value: 0.01
-      objectReference: {fileID: 0}
-    - target: {fileID: 4586986501844537080, guid: de9434e62061f41baa532af060266786, type: 3}
-      propertyPath: positionSmoothingFactor
-      value: 0.403
-      objectReference: {fileID: 0}
-    - target: {fileID: 4586986501844537080, guid: de9434e62061f41baa532af060266786, type: 3}
-      propertyPath: rotationSmoothingFactor
-      value: 0.01
-      objectReference: {fileID: 0}
-    - target: {fileID: 5766211290844292214, guid: de9434e62061f41baa532af060266786, type: 3}
-      propertyPath: m_DefaultActionMap
-      value: Player
+    - target: {fileID: 3106092502893135010, guid: de9434e62061f41baa532af060266786, type: 3}
+      propertyPath: velocityInterval
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 6162944281411833189, guid: de9434e62061f41baa532af060266786, type: 3}
       propertyPath: m_LocalPosition.x
@@ -3558,10 +3487,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 6560164126179222949, guid: de9434e62061f41baa532af060266786, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 672044086}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: de9434e62061f41baa532af060266786, type: 3}
 --- !u!1 &2013234551
 GameObject:
