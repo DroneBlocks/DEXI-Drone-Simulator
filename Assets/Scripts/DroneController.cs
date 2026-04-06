@@ -20,13 +20,7 @@ public class DroneController : BaseRigidBody
     private DroneInputs inputs;
     private List<IMotor> motors = new List<IMotor>();
 
-    private float yaw;
-    private float finalPitch;
-    private float finalRoll;
-    private float finalYaw;
-
     private DroneOdometrySubscriber odometry;
-
 
     private void Start()
     {
@@ -40,48 +34,11 @@ public class DroneController : BaseRigidBody
         if (ROSBridgeManager.Instance.IsConnected && odometry != null && odometry.HasReceivedData)
         {
             odometry.ApplyPhysics(rb);
-            return;
         }
 
-        HandleMotors();
-        HandleControls();
-    }
-
-    protected virtual void HandleMotors()
-    {
         foreach (IMotor motor in motors)
         {
-            motor.UpdateMotor(rb, inputs);
+            motor.HandlePropellers(inputs);
         }
-    }
-
-    protected virtual void HandleControls()
-    {
-        float pitch = inputs.Cyclic.y * minMaxPitch;
-        float roll = -inputs.Cyclic.x * minMaxRoll;
-        yaw += inputs.Yaw * yawPower;
-
-        finalPitch = Mathf.Lerp(finalPitch, pitch, Time.deltaTime * lerpSpeed);
-        finalRoll = Mathf.Lerp(finalRoll, roll, Time.deltaTime * lerpSpeed);
-        finalYaw = Mathf.Lerp(finalYaw, yaw, Time.deltaTime * lerpSpeed);
-
-        Quaternion rotation = Quaternion.Euler(finalPitch, finalYaw, finalRoll);
-        rb.MoveRotation(rotation);
-    }
-
-    protected virtual void HandleControls2()
-    {
-        // Get input values
-        float pitch = inputs.Cyclic.y * minMaxPitch;
-        float roll = inputs.Cyclic.x * minMaxRoll;
-        yaw += inputs.Yaw * yawPower;
-
-        // Calculate torque forces
-        Vector3 pitchTorque = transform.right * pitch;
-        Vector3 rollTorque = transform.forward * roll;
-        Vector3 yawTorque = transform.up * yaw;
-
-        // Apply combined torque
-        rb.AddTorque(pitchTorque + rollTorque + yawTorque, ForceMode.Force);
     }
 }

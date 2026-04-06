@@ -2,12 +2,7 @@ using UnityEngine;
 
 public interface IMotor
 {
-
     void InitMotor() {}
 
-    void UpdateMotor(Rigidbody rb, DroneInputs inputs) {}
-
-    
-    
-    
+    void HandlePropellers(DroneInputs inputs) {}
 }
