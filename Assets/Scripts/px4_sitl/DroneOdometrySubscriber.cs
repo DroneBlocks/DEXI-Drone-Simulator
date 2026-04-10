@@ -35,6 +35,7 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
 
     public Vector3 TargetPosition { get; private set; }
     public Quaternion TargetRotation { get; private set; } = Quaternion.identity;
+    public bool FreeFlightOverride { get; set; }
     public bool HasReceivedData { get; private set; }
 
     private float timeSinceLastMessage;

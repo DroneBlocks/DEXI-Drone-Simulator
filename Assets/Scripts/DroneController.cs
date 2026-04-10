@@ -37,6 +37,12 @@ public class DroneController : BaseRigidBody
 
     protected override void HandlePhysics()
     {
+        if (odometry != null && odometry.FreeFlightOverride)
+        {
+            // Free flight: ROSKeyboardController moves the drone directly
+            return;
+        }
+
         if (ROSBridgeManager.Instance.IsConnected && odometry != null && odometry.HasReceivedData)
         {
             odometry.ApplyPhysics(rb);

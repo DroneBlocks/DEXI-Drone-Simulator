@@ -137,7 +137,7 @@ public class GameManager : MonoBehaviour
         {
             ResetGame();
         }
-        else if ((kb.spaceKey.wasPressedThisFrame || kb.tKey.wasPressedThisFrame) && state == GameState.WaitingToStart)
+        else if (kb.tKey.wasPressedThisFrame && state == GameState.WaitingToStart)
         {
             StartGame();
         }
