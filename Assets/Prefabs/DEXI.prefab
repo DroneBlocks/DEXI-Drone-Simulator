@@ -906,15 +906,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   droneTransform: {fileID: 6162944281411833189}
-  useLocalPosition: 1
   positionOffset: {x: 0, y: 0, z: 0}
   rotationOffset: {x: 0, y: 0, z: 0}
+  positionSmoothSpeed: 15
+  rotationSmoothSpeed: 15
+  messageTimeoutSeconds: 0.5
   minimumHeight: 0.05
   landedAltitudeThreshold: 0.15
   landedVelocityThreshold: 0.1
-  enableSmoothing: 0
-  positionSmoothingFactor: 0.403
-  rotationSmoothingFactor: 0.01
   baseTopicPath: /fmu/out/vehicle_odometry
   messageType: px4_msgs/msg/VehicleOdometry
 --- !u!114 &2552943520280880897
