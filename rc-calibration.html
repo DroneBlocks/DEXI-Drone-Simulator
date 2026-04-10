@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RC Controller Calibration</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a2e; color: #eee; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 40px 20px; }
+  h1 { font-size: 28px; margin-bottom: 10px; }
+  .subtitle { color: #888; margin-bottom: 30px; }
+  #no-gamepad { color: #f55; font-size: 18px; margin: 40px 0; }
+  #gamepad-info { color: #4f4; margin-bottom: 20px; font-size: 14px; }
+  .step { background: #16213e; border-radius: 12px; padding: 30px 40px; max-width: 600px; width: 100%; margin-bottom: 20px; text-align: center; }
+  .step h2 { font-size: 22px; margin-bottom: 8px; }
+  .step .instruction { font-size: 32px; color: #4fc3f7; margin: 20px 0; font-weight: bold; }
+  .step .hint { color: #888; font-size: 14px; margin-top: 10px; }
+  .step .detected { color: #4f4; font-size: 16px; margin-top: 15px; }
+  .axis-display { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 15px 0; }
+  .axis-bar { background: #0a0a1a; border-radius: 6px; padding: 6px 12px; min-width: 120px; font-family: monospace; font-size: 13px; }
+  .axis-bar.active { background: #1b5e20; }
+  .progress { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; }
+  .progress .dot { width: 14px; height: 14px; border-radius: 50%; background: #333; }
+  .progress .dot.done { background: #4caf50; }
+  .progress .dot.current { background: #4fc3f7; }
+  .result { background: #16213e; border-radius: 12px; padding: 30px; max-width: 600px; width: 100%; }
+  .result h2 { margin-bottom: 15px; color: #4caf50; }
+  .result table { width: 100%; border-collapse: collapse; }
+  .result td, .result th { padding: 8px 12px; text-align: left; border-bottom: 1px solid #333; }
+  .result th { color: #888; }
+  .result .value { font-family: monospace; color: #4fc3f7; }
+  .btn { background: #4fc3f7; color: #000; border: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 15px; font-weight: bold; }
+  .btn:hover { background: #039be5; }
+  .btn.secondary { background: #555; color: #fff; }
+  .btn.secondary:hover { background: #777; }
+  .url-output { background: #0a0a1a; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; word-break: break-all; margin-top: 15px; color: #4fc3f7; }
+  .skip { color: #888; cursor: pointer; font-size: 13px; margin-top: 10px; text-decoration: underline; }
+  .skip:hover { color: #aaa; }
+</style>
+</head>
+<body>
+
+<h1>RC Controller Calibration</h1>
+<p class="subtitle">Map your controller axes for the DEXI Drone Simulator</p>
+
+<div id="no-gamepad">Press any button on your controller to connect...</div>
+<div id="gamepad-info" style="display:none"></div>
+
+<div class="progress" id="progress"></div>
+
+<div id="calibration" style="display:none">
+  <div class="step" id="step-container">
+    <h2 id="step-title"></h2>
+    <div class="instruction" id="step-instruction"></div>
+    <div class="axis-display" id="axis-display"></div>
+    <div class="detected" id="step-detected"></div>
+    <div class="hint" id="step-hint"></div>
+  </div>
+</div>
+
+<div id="result" class="result" style="display:none">
+  <h2>Calibration Complete</h2>
+  <table>
+    <tr><th>Function</th><th>Axis</th><th>Name</th><th>Inverted</th></tr>
+    <tr><td>Throttle</td><td class="value" id="r-throttle-axis"></td><td id="r-throttle-name"></td><td id="r-throttle-inv"></td></tr>
+    <tr><td>Yaw</td><td class="value" id="r-yaw-axis"></td><td id="r-yaw-name"></td><td id="r-yaw-inv"></td></tr>
+    <tr><td>Pitch</td><td class="value" id="r-pitch-axis"></td><td id="r-pitch-name"></td><td id="r-pitch-inv"></td></tr>
+    <tr><td>Roll</td><td class="value" id="r-roll-axis"></td><td id="r-roll-name"></td><td id="r-roll-inv"></td></tr>
+  </table>
+  <p style="margin-top:15px; color:#888; font-size:13px;">URL parameters for Unity sim:</p>
+  <div class="url-output" id="url-output"></div>
+  <div style="display:flex; gap:10px; justify-content:center;">
+    <button class="btn" onclick="copyURL()">Copy URL Params</button>
+    <button class="btn secondary" onclick="startCalibration()">Recalibrate</button>
+  </div>
+</div>
+
+<script>
+const STEPS = [
+  { id: 'throttle_up',   fn: 'throttle', label: 'Throttle', instruction: 'Push THROTTLE UP',     expect: 'max', hint: 'Left stick all the way up' },
+  { id: 'throttle_down', fn: 'throttle', label: 'Throttle', instruction: 'Push THROTTLE DOWN',   expect: 'min', hint: 'Left stick all the way down' },
+  { id: 'yaw_right',     fn: 'yaw',      label: 'Yaw',      instruction: 'Push YAW RIGHT',       expect: 'max', hint: 'Left stick all the way right' },
+  { id: 'yaw_left',      fn: 'yaw',      label: 'Yaw',      instruction: 'Push YAW LEFT',        expect: 'min', hint: 'Left stick all the way left' },
+  { id: 'pitch_fwd',     fn: 'pitch',    label: 'Pitch',    instruction: 'Push PITCH FORWARD',   expect: 'max', hint: 'Right stick all the way forward' },
+  { id: 'pitch_back',    fn: 'pitch',    label: 'Pitch',    instruction: 'Push PITCH BACK',      expect: 'min', hint: 'Right stick all the way back' },
+  { id: 'roll_right',    fn: 'roll',     label: 'Roll',     instruction: 'Push ROLL RIGHT',      expect: 'max', hint: 'Right stick all the way right' },
+  { id: 'roll_left',     fn: 'roll',     label: 'Roll',     instruction: 'Push ROLL LEFT',       expect: 'min', hint: 'Right stick all the way left' },
+];
+
+let gamepadIndex = null;
+let currentStep = 0;
+let baseline = [];
+let recordings = {};
+let axisNames = [];
+
+// Detect gamepad
+window.addEventListener('gamepadconnected', (e) => {
+  gamepadIndex = e.gamepad.index;
+  const gp = e.gamepad;
+  document.getElementById('no-gamepad').style.display = 'none';
+  document.getElementById('gamepad-info').style.display = 'block';
+  document.getElementById('gamepad-info').textContent = `${gp.id} (${gp.axes.length} axes, ${gp.buttons.length} buttons)`;
+
+  axisNames = gp.axes.map((_, i) => `Axis ${i}`);
+  baseline = gp.axes.map(v => v);
+
+  startCalibration();
+});
+
+window.addEventListener('gamepaddisconnected', () => {
+  gamepadIndex = null;
+  document.getElementById('no-gamepad').style.display = 'block';
+  document.getElementById('gamepad-info').style.display = 'none';
+  document.getElementById('calibration').style.display = 'none';
+});
+
+function startCalibration() {
+  currentStep = 0;
+  recordings = {};
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('calibration').style.display = 'block';
+  updateProgress();
+  showStep();
+}
+
+function updateProgress() {
+  const el = document.getElementById('progress');
+  el.innerHTML = '';
+  for (let i = 0; i < STEPS.length; i += 2) {
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    const stepPair = Math.floor(i / 2);
+    const currentPair = Math.floor(currentStep / 2);
+    if (stepPair < currentPair) dot.className += ' done';
+    else if (stepPair === currentPair) dot.className += ' current';
+    el.appendChild(dot);
+  }
+}
+
+function showStep() {
+  if (currentStep >= STEPS.length) {
+    finishCalibration();
+    return;
+  }
+
+  const step = STEPS[currentStep];
+  document.getElementById('step-title').textContent = `Step ${Math.floor(currentStep/2) + 1}/4: ${step.label}`;
+  document.getElementById('step-instruction').textContent = step.instruction;
+  document.getElementById('step-hint').textContent = step.hint;
+  document.getElementById('step-detected').textContent = '';
+  updateProgress();
+
+  // Wait for sticks to return to center, then record baseline
+  document.getElementById('step-detected').textContent = 'Return sticks to center...';
+  waitForCenter(() => {
+    if (gamepadIndex !== null) {
+      const gp = navigator.getGamepads()[gamepadIndex];
+      if (gp) baseline = gp.axes.map(v => v);
+    }
+    document.getElementById('step-detected').textContent = '';
+    setTimeout(() => detectAxis(), 500);
+  });
+}
+
+function waitForCenter(callback) {
+  const SETTLE_THRESHOLD = 0.3;
+  const SETTLE_FRAMES = 30; // ~0.5s of stable readings
+  let stableCount = 0;
+  let lastAxes = null;
+
+  function poll() {
+    if (gamepadIndex === null) { requestAnimationFrame(poll); return; }
+    const gp = navigator.getGamepads()[gamepadIndex];
+    if (!gp) { requestAnimationFrame(poll); return; }
+
+    // Check if all axes are stable (not moving much frame to frame)
+    if (lastAxes) {
+      let maxDelta = 0;
+      for (let i = 0; i < gp.axes.length; i++) {
+        maxDelta = Math.max(maxDelta, Math.abs(gp.axes[i] - lastAxes[i]));
+      }
+      if (maxDelta < 0.05) {
+        stableCount++;
+      } else {
+        stableCount = 0;
+      }
+    }
+    lastAxes = gp.axes.map(v => v);
+
+    if (stableCount >= SETTLE_FRAMES) {
+      callback();
+    } else {
+      requestAnimationFrame(poll);
+    }
+  }
+  requestAnimationFrame(poll);
+}
+
+function detectAxis() {
+  if (gamepadIndex === null) return;
+
+  const THRESHOLD = 0.7;
+  const step = STEPS[currentStep];
+
+  function poll() {
+    if (currentStep >= STEPS.length) return;
+    if (STEPS[currentStep].id !== step.id) return;
+
+    const gp = navigator.getGamepads()[gamepadIndex];
+    if (!gp) { requestAnimationFrame(poll); return; }
+
+    // Update axis display
+    const display = document.getElementById('axis-display');
+    display.innerHTML = '';
+    let detectedAxis = -1;
+    let detectedValue = 0;
+
+    for (let i = 0; i < gp.axes.length; i++) {
+      const val = gp.axes[i];
+      const diff = Math.abs(val - baseline[i]);
+      const isActive = diff > THRESHOLD;
+
+      const bar = document.createElement('div');
+      bar.className = 'axis-bar' + (isActive ? ' active' : '');
+      bar.textContent = `A${i}: ${val.toFixed(3)}`;
+      display.appendChild(bar);
+
+      if (isActive && diff > Math.abs(detectedValue - baseline[detectedAxis] || 0)) {
+        detectedAxis = i;
+        detectedValue = val;
+      }
+    }
+
+    if (detectedAxis >= 0) {
+      // Found the axis
+      const fn = step.fn;
+      if (!recordings[fn]) recordings[fn] = {};
+      recordings[fn][step.expect] = { axis: detectedAxis, value: detectedValue };
+
+      document.getElementById('step-detected').textContent =
+        `Detected: Axis ${detectedAxis} = ${detectedValue.toFixed(3)}`;
+
+      // Move to next step after brief pause
+      setTimeout(() => {
+        currentStep++;
+        showStep();
+      }, 800);
+      return;
+    }
+
+    requestAnimationFrame(poll);
+  }
+
+  requestAnimationFrame(poll);
+}
+
+function finishCalibration() {
+  document.getElementById('calibration').style.display = 'none';
+  document.getElementById('result').style.display = 'block';
+
+  const mapping = {};
+
+  for (const fn of ['throttle', 'yaw', 'pitch', 'roll']) {
+    const rec = recordings[fn];
+    if (!rec || !rec.max || !rec.min) {
+      mapping[fn] = { axis: -1, inverted: false };
+      continue;
+    }
+
+    // Both directions should map to the same axis
+    const axis = rec.max.axis;
+    // If "max" direction gives a negative value, axis is inverted
+    const inverted = rec.max.value < rec.min.value;
+
+    mapping[fn] = { axis, inverted };
+
+    document.getElementById(`r-${fn}-axis`).textContent = axis;
+    document.getElementById(`r-${fn}-name`).textContent = `Axis ${axis}`;
+    document.getElementById(`r-${fn}-inv`).textContent = inverted ? 'Yes' : 'No';
+  }
+
+  // Generate URL params
+  const params = new URLSearchParams();
+  params.set('rcThrottle', mapping.throttle.axis);
+  params.set('rcYaw', mapping.yaw.axis);
+  params.set('rcPitch', mapping.pitch.axis);
+  params.set('rcRoll', mapping.roll.axis);
+  if (mapping.throttle.inverted) params.set('rcInvertThrottle', '1');
+  if (mapping.yaw.inverted) params.set('rcInvertYaw', '1');
+  if (mapping.pitch.inverted) params.set('rcInvertPitch', '1');
+  if (mapping.roll.inverted) params.set('rcInvertRoll', '1');
+
+  // Detect if throttle rests at -1
+  if (baseline[mapping.throttle.axis] < -0.8) {
+    params.set('rcThrottleCenter', '-1');
+  }
+
+  document.getElementById('url-output').textContent = '?' + params.toString();
+}
+
+function copyURL() {
+  const text = document.getElementById('url-output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy URL Params', 1500);
+  });
+}
+
+// Poll for gamepads (some browsers need this)
+function pollGamepads() {
+  if (gamepadIndex === null) {
+    const gamepads = navigator.getGamepads();
+    for (let i = 0; i < gamepads.length; i++) {
+      if (gamepads[i]) {
+        window.dispatchEvent(new GamepadEvent('gamepadconnected', { gamepad: gamepads[i] }));
+        break;
+      }
+    }
+  }
+  requestAnimationFrame(pollGamepads);
+}
+pollGamepads();
+</script>
+
+</body>
+</html>
