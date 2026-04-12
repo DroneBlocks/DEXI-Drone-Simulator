@@ -3,95 +3,45 @@ using UnityEngine;
 public class DroneCamera : MonoBehaviour
 {
     public Transform target;
-    public float followDistance = 0.44f;
-    public float height = 0.5f;
+    public float followDistance = 3f;
     public float smoothSpeed = 5.0f;
-    public float tiltAngle = 30f;
 
-    // Orbit settings
     public float orbitSpeed = 2000f;
     public float minVerticalAngle = -30f;
     public float maxVerticalAngle = 80f;
 
-    // Zoom settings
     public float zoomSpeed = 2f;
-    public float minZoomDistance = 0.1f;
+    public float minZoomDistance = 0.5f;
     public float maxZoomDistance = 50f;
-    
-    // FPV view settings
-    public float fpvForwardOffset = 0.5f;    // Distance in front of drone
-    public float fpvHeightOffset = 0.2f;     // Height above drone center
-    
-    // Bottom view settings
-    public float bottomViewHeight = 0.5f;    // Distance below drone
-    public float groundViewDistance = 20f;    // How far down to look
 
-    private enum CameraMode
-    {
-        Follow,
-        FPV,
-        Bottom
-    }
-    
+    public float collisionRadius = 0.2f;
+    public float collisionSkinWidth = 0.1f;
+    public LayerMask collisionMask = ~0;
+
+    public float fpvForwardOffset = 0.5f;
+    public float fpvHeightOffset = 0.2f;
+    public float bottomViewHeight = 0.5f;
+
+    private enum CameraMode { Follow, FPV, Bottom }
     private CameraMode currentMode = CameraMode.Follow;
-    private Vector3 lastFollowPosition;
-    private Quaternion lastFollowRotation;
-    
-    // Orbit state
+
     private float orbitX = 0f;
-    private float orbitY = 0f;
-
-    void Start()
-    {
-        if (target)
-        {
-            // Set initial position
-            Vector3 startPos = target.position;
-            startPos.y += height;
-            startPos.z -= followDistance;
-            transform.position = startPos;
-        }
-
-        // Initialize orbit angles
-        orbitY = tiltAngle;
-    }
+    private float orbitY = 20f;
 
     void LateUpdate()
     {
         if (!target) return;
 
-        // Check for camera toggle
         if (Input.GetKeyDown(KeyCode.C))
         {
-            // Cycle through modes
-            switch (currentMode)
-            {
-                case CameraMode.Follow:
-                    currentMode = CameraMode.FPV;
-                    lastFollowPosition = transform.position;
-                    lastFollowRotation = transform.rotation;
-                    break;
-                case CameraMode.FPV:
-                    currentMode = CameraMode.Bottom;
-                    break;
-                case CameraMode.Bottom:
-                    currentMode = CameraMode.Follow;
-                    break;
-            }
+            currentMode = (CameraMode)(((int)currentMode + 1) % 3);
         }
 
-        // Update camera based on current mode
         switch (currentMode)
         {
-            case CameraMode.Follow:
-                UpdateFollowView();
-                break;
-            case CameraMode.FPV:
-                UpdateFPVView();
-                break;
-            case CameraMode.Bottom:
-                UpdateBottomView();
-                break;
+            case CameraMode.Follow: UpdateFollowView(); break;
+            case CameraMode.FPV: UpdateFPVView(); break;
+            case CameraMode.Bottom: UpdateBottomView(); break;
         }
     }
 
@@ -99,53 +49,40 @@ public class DroneCamera : MonoBehaviour
     {
         if (Input.GetMouseButton(1))
         {
-            float maxDelta = 5f;
-            float mouseX = Mathf.Clamp(Input.GetAxis("Mouse X"), -maxDelta, maxDelta);
-            float mouseY = Mathf.Clamp(Input.GetAxis("Mouse Y"), -maxDelta, maxDelta);
-
-            orbitX += mouseX * orbitSpeed * Time.deltaTime;
-            orbitY -= mouseY * orbitSpeed * Time.deltaTime;
+            orbitX += Mathf.Clamp(Input.GetAxis("Mouse X"), -5f, 5f) * orbitSpeed * Time.deltaTime;
+            orbitY -= Mathf.Clamp(Input.GetAxis("Mouse Y"), -5f, 5f) * orbitSpeed * Time.deltaTime;
             orbitY = Mathf.Clamp(orbitY, minVerticalAngle, maxVerticalAngle);
         }
 
-        float scrollInput = Input.GetAxis("Mouse ScrollWheel");
-        if (scrollInput != 0f)
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (scroll != 0f)
         {
-            followDistance -= scrollInput * zoomSpeed;
-            followDistance = Mathf.Clamp(followDistance, minZoomDistance, maxZoomDistance);
+            followDistance = Mathf.Clamp(followDistance - scroll * zoomSpeed, minZoomDistance, maxZoomDistance);
         }
 
         Quaternion rotation = Quaternion.Euler(orbitY, orbitX, 0);
-        Vector3 desiredPosition = target.position + rotation * new Vector3(0, height, -followDistance);
+        Vector3 dir = rotation * Vector3.back;
 
-        transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
+        float dist = followDistance;
+        if (Physics.SphereCast(target.position, collisionRadius, dir, out RaycastHit hit, followDistance, collisionMask))
+            dist = Mathf.Max(hit.distance - collisionSkinWidth, minZoomDistance);
 
-        Quaternion desiredRotation = Quaternion.LookRotation(target.position - transform.position);
-        transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, smoothSpeed * Time.deltaTime);
+        transform.position = target.position + dir * dist;
+        transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(target.position - transform.position), smoothSpeed * Time.deltaTime);
     }
 
     void UpdateFPVView()
     {
-        // Position camera slightly in front and above drone's center
-        Vector3 desiredPosition = target.position + 
-                                (target.forward * fpvForwardOffset) + 
-                                (Vector3.up * fpvHeightOffset);
-
-        // Move smoothly to position
+        Vector3 desiredPosition = target.position + target.forward * fpvForwardOffset + Vector3.up * fpvHeightOffset;
         transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
-
-        // Match drone's rotation
         transform.rotation = Quaternion.Lerp(transform.rotation, target.rotation, smoothSpeed * Time.deltaTime);
     }
 
     void UpdateBottomView()
     {
-        // Position camera below drone
-        Vector3 desiredPosition = target.position + Vector3.down * bottomViewHeight;
-        transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
-
-        // Look down while maintaining drone's forward direction
-        Quaternion desiredRotation = Quaternion.LookRotation(Vector3.down, target.forward);
-        transform.rotation = Quaternion.Lerp(transform.rotation, desiredRotation, smoothSpeed * Time.deltaTime);
+        transform.position = Vector3.Lerp(transform.position,
+            target.position + Vector3.down * bottomViewHeight, smoothSpeed * Time.deltaTime);
+        transform.rotation = Quaternion.Lerp(transform.rotation,
+            Quaternion.LookRotation(Vector3.down, target.forward), smoothSpeed * Time.deltaTime);
     }
-} 
+}

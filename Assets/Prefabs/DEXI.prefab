@@ -764,8 +764,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.2, y: 0.2, z: 0.2}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 4633350676260589924}
   - {fileID: 4384822656774343422}
@@ -945,6 +945,7 @@ MonoBehaviour:
   xySpeed: 0.5
   zSpeed: 0.3
   yawRate: 30
+  stickDeadzone: 0.15
   velocityInterval: 0.1
   offboardTopic: /dexi/offboard_manager
   offboardMsgType: dexi_interfaces/msg/OffboardNavCommand
@@ -952,6 +953,9 @@ MonoBehaviour:
   serviceType: dexi_interfaces/srv/ExecuteBlocklyCommand
   inFlight: 0
   isArming: 0
+  freeFlightMode: 0
+  freeFlightSpeed: 3
+  freeFlightYawSpeed: 90
 --- !u!114 &6054977267072099961
 MonoBehaviour:
   m_ObjectHideFlags: 0
