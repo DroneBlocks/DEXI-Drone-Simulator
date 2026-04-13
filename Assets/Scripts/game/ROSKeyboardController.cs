@@ -76,6 +76,10 @@ public class ROSKeyboardController : MonoBehaviour
     public float freeFlightSpeed = 3f;
     public float freeFlightYawSpeed = 90f;
 
+    [Header("HUD")]
+    [Tooltip("Draw the keyboard hint overlay. Disable for minimal teaching scenes.")]
+    public bool showHud = false;
+
     private float velocityTimer;
     private bool advertised;
     private DroneOdometrySubscriber odometry;
