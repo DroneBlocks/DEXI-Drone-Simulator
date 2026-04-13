@@ -9,6 +9,10 @@ public class FlyThroughGate : MonoBehaviour
     [Header("Gate Settings")]
     public string gateName = "Gate";
 
+    [Header("Bridge Link")]
+    [Tooltip("The bridge ScanTarget above this tunnel. Correct gate = the one whose linked target is real.")]
+    public ScanTarget linkedScanTarget;
+
     [Tooltip("Inner width of the opening (meters)")]
     public float openingWidth = 0.4f;
 
@@ -40,7 +44,9 @@ public class FlyThroughGate : MonoBehaviour
         BuildGate();
 
         if (GameManager.Instance != null)
+        {
             GameManager.Instance.RegisterGate(this);
+        }
     }
 
     void BuildGate()

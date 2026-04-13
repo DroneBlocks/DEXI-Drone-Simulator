@@ -2,11 +2,12 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 
 /// <summary>
 /// Core game manager for the simulation challenge.
-/// Handles target randomization, timer, scoring, and LED color coordination.
-/// Timer uses unscaledDeltaTime so Time.timeScale can't affect scoring.
+/// Handles target randomization, timer, and answer key publishing.
+/// Scoring is handled externally by the Node-RED validator via /game/score_update.
 /// </summary>
 public class GameManager : MonoBehaviour
 {
@@ -22,28 +23,24 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float elapsedTime;
     public float ElapsedTime => elapsedTime;
 
-    [Header("LED Colors")]
-    [Tooltip("LED color shown when landing is confirmed")]
-    public Color landingConfirmColor = Color.yellow;
-
-    // Registered targets, zones, and gates
     private List<ScanTarget> allTargets = new List<ScanTarget>();
     private List<LandingZone> allLandingZones = new List<LandingZone>();
     private List<FlyThroughGate> allGates = new List<FlyThroughGate>();
 
-    // Tracking
-    private int targetsScanned;
-    private bool landingComplete;
-    private int gatesCompleted;
+    private GameScoreSubscriber scoreSubscriber;
 
-    // Events
-    public System.Action<ScanTarget> OnTargetScanned;
-    public System.Action<LandingZone> OnLandingDetected;
-    public System.Action<FlyThroughGate> OnGateTriggered;
-    public System.Action OnGameStarted;
-    public System.Action<float> OnGameCompleted;
+    private GameScoreUpdate latestScore;
+    private float scoreMessageTimer;
+    private const float SCORE_MESSAGE_DURATION = 4f;
 
     private bool hasInitialized;
+    private string answerKeyTopic;
+    private string gateEventTopic;
+    private string landingEventTopic;
+    private string finalTimeTopic;
+    private bool hasAdvertisedTopics;
+    private float answerKeyRepublishTimer;
+    private const float ANSWER_KEY_REPUBLISH_INTERVAL = 5f;
 
     void Awake()
     {
@@ -52,11 +49,66 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+
         Instance = this;
+
+        scoreSubscriber = GetComponent<GameScoreSubscriber>();
+    }
+
+    private void Start()
+    {
+        scoreSubscriber.OnScoreUpdateReceived += HandleScoreUpdate;
+
+        answerKeyTopic = ROSBridgeManager.Instance.ApplyNamespace("/game/answer_key");
+        gateEventTopic = ROSBridgeManager.Instance.ApplyNamespace("/game/gate_event");
+        landingEventTopic = ROSBridgeManager.Instance.ApplyNamespace("/game/landing_event");
+        finalTimeTopic = ROSBridgeManager.Instance.ApplyNamespace("/game/final_time");
+        ROSBridgeManager.Instance.OnConnected += OnROSConnected;
+
+        if (ROSBridgeManager.Instance.IsConnected)
+            AdvertiseTopics();
+    }
+
+    private void OnROSConnected()
+    {
+        hasAdvertisedTopics = false;
+        AdvertiseTopics();
+
+        if (hasInitialized)
+            PublishAnswerKey();
+    }
+
+    private void AdvertiseTopics()
+    {
+        if (hasAdvertisedTopics) return;
+        ROSBridgeManager.Instance.Advertise(answerKeyTopic, "std_msgs/msg/String");
+        ROSBridgeManager.Instance.Advertise(gateEventTopic, "std_msgs/msg/String");
+        ROSBridgeManager.Instance.Advertise(landingEventTopic, "std_msgs/msg/String");
+        ROSBridgeManager.Instance.Advertise(finalTimeTopic, "std_msgs/msg/String");
+        hasAdvertisedTopics = true;
+    }
+
+    private void HandleScoreUpdate(GameScoreUpdate score)
+    {
+        latestScore = score;
+        scoreMessageTimer = SCORE_MESSAGE_DURATION;
+
+        if (score.game_complete && state == GameState.Running)
+        {
+            state = GameState.Completed;
+            score.elapsed_seconds = elapsedTime.ToString("F2");
+            PublishFinalTime();
+            Debug.Log($"GameManager: Game COMPLETED in {elapsedTime:F2}s");
+        }
+
+        Debug.Log($"GameManager: Score update — {score.detected} detected, {score.led_correct} LED correct, complete: {score.game_complete}");
     }
 
     void Update()
     {
+        if (scoreMessageTimer > 0f)
+            scoreMessageTimer -= Time.unscaledDeltaTime;
+
         if (!hasInitialized && allTargets.Count > 0)
         {
             hasInitialized = true;
@@ -66,35 +118,53 @@ public class GameManager : MonoBehaviour
         if (state == GameState.Running)
         {
             elapsedTime += Time.unscaledDeltaTime;
-            CheckCompletion();
+        }
+
+        // Re-publish answer key periodically so late subscribers receive it
+        if (hasInitialized && ROSBridgeManager.Instance.IsConnected)
+        {
+            answerKeyRepublishTimer -= Time.unscaledDeltaTime;
+            if (answerKeyRepublishTimer <= 0f)
+            {
+                answerKeyRepublishTimer = ANSWER_KEY_REPUBLISH_INTERVAL;
+                PublishAnswerKey();
+            }
         }
 
         var kb = Keyboard.current;
         if (kb == null) return;
         if (kb.rKey.wasPressedThisFrame)
+        {
             ResetGame();
-        else if (kb.spaceKey.wasPressedThisFrame && state == GameState.WaitingToStart)
+        }
+        else if (kb.tKey.wasPressedThisFrame && state == GameState.WaitingToStart)
+        {
             StartGame();
+        }
     }
-
-    public List<ScanTarget> GetAllTargets() => allTargets;
 
     public void RegisterTarget(ScanTarget target)
     {
         if (!allTargets.Contains(target))
+        {
             allTargets.Add(target);
+        }
     }
 
     public void RegisterLandingZone(LandingZone zone)
     {
         if (!allLandingZones.Contains(zone))
+        {
             allLandingZones.Add(zone);
+        }
     }
 
     public void RegisterGate(FlyThroughGate gate)
     {
         if (!allGates.Contains(gate))
+        {
             allGates.Add(gate);
+        }
     }
 
     [ContextMenu("Randomize Targets")]
@@ -110,14 +180,64 @@ public class GameManager : MonoBehaviour
             ShufflePositions(targets);
 
             foreach (var t in targets)
+            {
                 t.SetReal(false);
+            }
 
             int realIndex = Random.Range(0, targets.Count);
-            targets[realIndex].SetReal(true);
+            ScanTarget target = targets[realIndex];
 
-            Debug.Log($"GameManager: Group '{group.Key}' — target '{targets[realIndex].targetName}' is REAL " +
-                      $"at position ({targets[realIndex].transform.position.x:F1}, {targets[realIndex].transform.position.z:F1})");
+            target.SetReal(true);
+
+            Debug.Log($"GameManager: Group '{group.Key}' — target '{target.targetName}' is REAL " + $"at position ({target.transform.position.x:F1}, {target.transform.position.z:F1})");
         }
+
+        PublishAnswerKey();
+    }
+
+    private async void PublishAnswerKey()
+    {
+        if (!ROSBridgeManager.Instance.IsConnected) return;
+
+        var answerKey = new AnswerKey();
+        var groups = allTargets.GroupBy(t => t.groupName);
+
+        foreach (var group in groups)
+        {
+            ScanTarget realTarget = group.FirstOrDefault(t => t.IsReal);
+            if (realTarget == null) continue;
+
+            answerKey.targets.Add(new AnswerKeyTarget
+            {
+                group = group.Key,
+                target_name = realTarget.targetName,
+                target_type = realTarget.targetType == ScanTarget.TargetType.AprilTag ? "apriltag" : "yolo",
+                apriltag_id = realTarget.apriltagID,
+                yolo_class = realTarget.yoloLabel,
+                led_color = ColorToName(realTarget.expectedLEDColor)
+            });
+        }
+
+        var msg = new { data = JsonConvert.SerializeObject(answerKey) };
+        await ROSBridgeManager.Instance.Publish(answerKeyTopic, "std_msgs/msg/String", msg);
+        Debug.Log($"GameManager: Published answer key with {answerKey.targets.Count} targets to {answerKeyTopic}");
+    }
+
+    [System.Serializable]
+    private class AnswerKey
+    {
+        public List<AnswerKeyTarget> targets = new List<AnswerKeyTarget>();
+    }
+
+    [System.Serializable]
+    private class AnswerKeyTarget
+    {
+        public string group;
+        public string target_name;
+        public string target_type;
+        public int apriltag_id;
+        public string yolo_class;
+        public string led_color;
     }
 
     private void ShufflePositions(List<ScanTarget> targets)
@@ -146,30 +266,41 @@ public class GameManager : MonoBehaviour
         }
 
         if (allTargets.All(t => !t.IsReal))
+        {
             RandomizeTargets();
+        }
 
         elapsedTime = 0f;
-        targetsScanned = 0;
-        landingComplete = false;
-        gatesCompleted = 0;
+        latestScore = null;
         state = GameState.Running;
 
         Debug.Log("GameManager: Game STARTED");
-        OnGameStarted?.Invoke();
     }
 
-    public void ReportScan(ScanTarget target)
+    [ContextMenu("Reset Game")]
+    public void ResetGame()
     {
-        if (state != GameState.Running) return;
-        if (target.IsScanned) return;
+        state = GameState.WaitingToStart;
+        elapsedTime = 0f;
+        latestScore = null;
 
-        target.MarkScanned();
-        targetsScanned++;
+        foreach (var t in allTargets)
+        {
+            t.ResetState();
+        }
 
-        Debug.Log($"GameManager: Target validated — '{target.targetName}' (group: {target.groupName}). " +
-                  $"LED: {ColorToName(target.expectedLEDColor)}. [{targetsScanned} scanned]");
+        foreach (var z in allLandingZones)
+        {
+            z.ResetState();
+        }
 
-        OnTargetScanned?.Invoke(target);
+        foreach (var g in allGates)
+        {
+            g.ResetState();
+        }
+
+        RandomizeTargets();
+        Debug.Log("GameManager: Game RESET");
     }
 
     public void ReportLanding(LandingZone zone)
@@ -178,64 +309,62 @@ public class GameManager : MonoBehaviour
         if (zone.IsLanded) return;
 
         zone.MarkLanded();
-        landingComplete = true;
-
-        SetDroneLEDColor(landingConfirmColor);
-        Debug.Log($"GameManager: Landing confirmed on '{zone.zoneName}'. LED → {ColorToName(landingConfirmColor)}");
-
-        OnLandingDetected?.Invoke(zone);
+        Debug.Log($"GameManager: Landing confirmed on '{zone.zoneName}'");
+        PublishLandingEvent(zone);
     }
 
     public void ReportGate(FlyThroughGate gate)
     {
         if (state != GameState.Running) return;
 
-        gatesCompleted++;
-        Debug.Log($"GameManager: Gate '{gate.gateName}' completed! [{gatesCompleted}/{allGates.Count}]");
+        string linkedTarget = gate.linkedScanTarget != null ? gate.linkedScanTarget.targetName : "unknown";
+        bool isCorrect = gate.linkedScanTarget != null && gate.linkedScanTarget.IsReal;
 
-        OnGateTriggered?.Invoke(gate);
+        Debug.Log($"GameManager: Gate '{gate.gateName}' completed! Linked: {linkedTarget}, Correct: {isCorrect}");
+        PublishGateEvent(gate);
     }
 
-    [ContextMenu("Reset Game")]
-    public void ResetGame()
+    private async void PublishGateEvent(FlyThroughGate gate)
     {
-        state = GameState.WaitingToStart;
-        elapsedTime = 0f;
-        targetsScanned = 0;
-        landingComplete = false;
-        gatesCompleted = 0;
+        if (!ROSBridgeManager.Instance.IsConnected) return;
 
-        foreach (var t in allTargets)
-            t.ResetState();
-        foreach (var z in allLandingZones)
-            z.ResetState();
-        foreach (var g in allGates)
-            g.ResetState();
-
-        RandomizeTargets();
-        Debug.Log("GameManager: Game RESET");
-    }
-
-    private void CheckCompletion()
-    {
-        int realTargetCount = allTargets.Count(t => t.IsReal);
-        bool allRealScanned = targetsScanned >= realTargetCount && realTargetCount > 0;
-        bool allLandingsDone = allLandingZones.Count == 0 || landingComplete;
-        bool allGatesDone = allGates.Count == 0 || gatesCompleted >= allGates.Count;
-
-        if (allRealScanned && allLandingsDone && allGatesDone)
+        var gateEvent = new
         {
-            state = GameState.Completed;
-            Debug.Log($"GameManager: Game COMPLETED in {elapsedTime:F2}s");
-            OnGameCompleted?.Invoke(elapsedTime);
-        }
+            gate_name = gate.gateName,
+            linked_target = gate.linkedScanTarget != null ? gate.linkedScanTarget.targetName : "",
+            is_correct = gate.linkedScanTarget != null && gate.linkedScanTarget.IsReal
+        };
+
+        var msg = new { data = JsonConvert.SerializeObject(gateEvent) };
+        await ROSBridgeManager.Instance.Publish(gateEventTopic, "std_msgs/msg/String", msg);
     }
 
-    private void SetDroneLEDColor(Color color)
+    private async void PublishFinalTime()
     {
-        var ledVis = FindFirstObjectByType<LEDRingVisualizer>();
-        if (ledVis != null)
-            ledVis.SetAllLEDs(color);
+        if (!ROSBridgeManager.Instance.IsConnected) return;
+
+        var finalTime = new
+        {
+            time = elapsedTime,
+            time_formatted = $"{elapsedTime:F2}s"
+        };
+
+        var msg = new { data = JsonConvert.SerializeObject(finalTime) };
+        await ROSBridgeManager.Instance.Publish(finalTimeTopic, "std_msgs/msg/String", msg);
+        Debug.Log($"GameManager: Published final time {elapsedTime:F2}s to {finalTimeTopic}");
+    }
+
+    private async void PublishLandingEvent(LandingZone zone)
+    {
+        if (!ROSBridgeManager.Instance.IsConnected) return;
+
+        var landingEvent = new
+        {
+            zone_name = zone.zoneName
+        };
+
+        var msg = new { data = JsonConvert.SerializeObject(landingEvent) };
+        await ROSBridgeManager.Instance.Publish(landingEventTopic, "std_msgs/msg/String", msg);
     }
 
     private string ColorToName(Color c)
@@ -245,6 +374,12 @@ public class GameManager : MonoBehaviour
         if (c == Color.green) return "GREEN";
         if (c == Color.yellow) return "YELLOW";
         return $"({c.r:F1},{c.g:F1},{c.b:F1})";
+    }
+
+    private void OnDestroy()
+    {
+        if (ROSBridgeManager.Instance != null)
+            ROSBridgeManager.Instance.OnConnected -= OnROSConnected;
     }
 
     void OnGUI()
@@ -280,7 +415,7 @@ public class GameManager : MonoBehaviour
         foreach (var group in groups)
         {
             ScanTarget realTarget = group.FirstOrDefault(t => t.IsReal);
-            bool found = realTarget != null && realTarget.IsScanned;
+            bool found = realTarget != null;
             if (found)
             {
                 GUIStyle colorStyle = new GUIStyle(style);
@@ -354,5 +489,50 @@ public class GameManager : MonoBehaviour
         GUIStyle smallStyle = new GUIStyle(GUI.skin.label) { fontSize = 11 };
         smallStyle.normal.textColor = new Color(1, 1, 1, 0.6f);
         GUI.Label(new Rect(10, Screen.height - 30, 400, 25), "[R] Reset  [Space] Start", smallStyle);
+
+        // Validator score feedback
+        if (latestScore != null && (scoreMessageTimer > 0f || latestScore.game_complete))
+        {
+            float bannerW = 420f;
+            float bannerH = latestScore.game_complete ? 80f : 50f;
+            float bannerX = (Screen.width - bannerW) / 2f;
+            float bannerY = 10f;
+
+            Color bgColor = latestScore.game_complete
+                ? new Color(0f, 0.5f, 0f, 0.85f)
+                : new Color(0f, 0.3f, 0.6f, 0.85f);
+
+            Texture2D bgTex = new Texture2D(1, 1);
+            bgTex.SetPixel(0, 0, bgColor);
+            bgTex.Apply();
+            GUI.DrawTexture(new Rect(bannerX, bannerY, bannerW, bannerH), bgTex);
+
+            GUIStyle bannerStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 20,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter
+            };
+            bannerStyle.normal.textColor = Color.white;
+
+            if (latestScore.game_complete)
+            {
+                GUI.Label(new Rect(bannerX, bannerY, bannerW, bannerH / 2), "MISSION COMPLETE!", bannerStyle);
+                bannerStyle.fontSize = 16;
+                GUI.Label(new Rect(bannerX, bannerY + bannerH / 2, bannerW, bannerH / 2),
+                    $"Time: {latestScore.elapsed_seconds}s", bannerStyle);
+            }
+            else
+            {
+                string line = $"Detected: {latestScore.detected}  |  LED: {latestScore.led_correct}";
+
+                if (latestScore.@event == "gate_completed")
+                    line = latestScore.gate_correct ? "Correct Tunnel!" : "Wrong Tunnel!";
+                else if (latestScore.@event == "landing_completed")
+                    line = $"Landing Confirmed! ({latestScore.landings})";
+
+                GUI.Label(new Rect(bannerX, bannerY, bannerW, bannerH), line, bannerStyle);
+            }
+        }
     }
 }

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  version: 9
+  version: 10
 --- !u!114 &-5820708434978023804
 MonoBehaviour:
   m_ObjectHideFlags: 11
@@ -151,6 +151,7 @@ Material:
     - _CastShadows: 1
     - _Cull: 2
     - _DstBlend: 0
+    - _DstBlendAlpha: 0
     - _IRIDESCENCE: 0
     - _NormalMapFormatXYZ: 0
     - _OverrideSurfaceMode: 0
@@ -160,6 +161,7 @@ Material:
     - _SHEEN: 0
     - _SPECULAR: 0
     - _SrcBlend: 1
+    - _SrcBlendAlpha: 1
     - _Surface: 0
     - _TEXTURE_TRANSFORM: 0
     - _VOLUME_ON: 0

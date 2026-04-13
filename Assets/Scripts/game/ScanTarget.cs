@@ -8,6 +8,7 @@ using UnityEngine;
 public class ScanTarget : MonoBehaviour
 {
     public enum TargetType { AprilTag, YoloImage }
+    public enum YoloTargetPlace { Cabin, Bridge }
 
     [Header("Target Identity")]
     [Tooltip("Which group this target belongs to (e.g. 'apriltags' or 'yolo_vehicles')")]
@@ -27,8 +28,14 @@ public class ScanTarget : MonoBehaviour
     [SerializeField] private bool isReal;
     [SerializeField] private bool isScanned;
 
+    [Header("Apriltag Settings")]
+    public int apriltagID = 0;
+
+    [Header("YOLO Settings")]
+    public string yoloLabel = "";
+    public YoloTargetPlace yoloPlace = YoloTargetPlace.Cabin;
+
     public bool IsReal => isReal;
-    public bool IsScanned => isScanned;
 
     private Renderer targetRenderer;
     private Material originalMaterial;
@@ -38,10 +45,14 @@ public class ScanTarget : MonoBehaviour
     {
         targetRenderer = GetComponent<Renderer>();
         if (targetRenderer != null)
+        {
             originalMaterial = targetRenderer.material;
+        }
 
         if (GameManager.Instance != null)
+        {
             GameManager.Instance.RegisterTarget(this);
+        }
     }
 
     /// <summary>
@@ -68,30 +79,24 @@ public class ScanTarget : MonoBehaviour
                     blankMaterial.mainTexture = null;
                     blankMaterial.color = new Color(0.3f, 0.3f, 0.3f);
                 }
+
                 targetRenderer.material = blankMaterial;
             }
         }
     }
 
-    /// <summary>
-    /// Mark this target as having been scanned by the drone.
-    /// </summary>
-    public void MarkScanned()
-    {
-        isScanned = true;
-    }
 
     /// <summary>
     /// Reset to initial state for a new round.
     /// </summary>
     public void ResetState()
     {
-        isScanned = false;
         isReal = false;
 
-        // Restore original appearance before next randomization
         if (targetRenderer != null && originalMaterial != null)
+        {
             targetRenderer.material = originalMaterial;
+        }
     }
 
     void OnDrawGizmos()

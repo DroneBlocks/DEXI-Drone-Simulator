@@ -20,64 +20,31 @@ public class DroneController : BaseRigidBody
     private DroneInputs inputs;
     private List<IMotor> motors = new List<IMotor>();
 
-    private float yaw;
-    private float finalPitch;
-    private float finalRoll;
-    private float finalYaw;
-
+    private DroneOdometrySubscriber odometry;
 
     private void Start()
     {
         inputs = GetComponent<DroneInputs>();
         motors = GetComponentsInChildren<IMotor>().ToList<IMotor>();
+        odometry = GetComponent<DroneOdometrySubscriber>();
     }
-
 
     protected override void HandlePhysics()
     {
-        HandleMotors();
-        HandleControls();
-    }
+        if (odometry != null && odometry.FreeFlightOverride)
+        {
+            // Free flight: ROSKeyboardController moves the drone directly
+            return;
+        }
 
-    protected virtual void HandleMotors()
-    {
+        if (ROSBridgeManager.Instance.IsConnected && odometry != null && odometry.HasReceivedData)
+        {
+            odometry.ApplyPhysics(rb);
+        }
+
         foreach (IMotor motor in motors)
         {
-            motor.UpdateMotor(rb, inputs);
+            motor.HandlePropellers(inputs);
         }
-        
     }
-
-    protected virtual void HandleControls()
-    {
-        float pitch = inputs.Cyclic.y * minMaxPitch;
-        float roll = -inputs.Cyclic.x * minMaxRoll;
-        yaw += inputs.Yaw * yawPower;
-
-        finalPitch = Mathf.Lerp(finalPitch, pitch, Time.deltaTime * lerpSpeed);
-        finalRoll = Mathf.Lerp(finalRoll, roll, Time.deltaTime * lerpSpeed);
-        finalYaw = Mathf.Lerp(finalYaw, yaw, Time.deltaTime * lerpSpeed);
-
-        Quaternion rotation = Quaternion.Euler(finalPitch, finalYaw, finalRoll);
-        rb.MoveRotation(rotation);
-    }
-
-    protected virtual void HandleControls2()
-    {
-        // Get input values
-        float pitch = inputs.Cyclic.y * minMaxPitch;
-        float roll = inputs.Cyclic.x * minMaxRoll;
-        yaw += inputs.Yaw * yawPower;
-
-        // Calculate torque forces
-        Vector3 pitchTorque = transform.right * pitch;
-        Vector3 rollTorque = transform.forward * roll;
-        Vector3 yawTorque = transform.up * yaw;
-
-        // Apply combined torque
-        rb.AddTorque(pitchTorque + rollTorque + yawTorque, ForceMode.Force);
-    }
-    
-    
-    
 }

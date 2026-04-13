@@ -15,8 +15,6 @@ public class DroneInputs : MonoBehaviour
     public float Yaw { get => yaw; }
     public float Throttle { get => throttle; }
     
-
-
     void Update()
     {
 
