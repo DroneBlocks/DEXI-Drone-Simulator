@@ -34,6 +34,10 @@ public class ROSKeyboardController : MonoBehaviour
     [SerializeField] private bool inFlight;
     [SerializeField] private bool isArming;
 
+    [Header("HUD")]
+    [Tooltip("Draw the keyboard hint overlay. Disable for minimal teaching scenes.")]
+    public bool showHud = false;
+
     private float velocityTimer;
     private bool advertised;
 
@@ -175,6 +179,8 @@ public class ROSKeyboardController : MonoBehaviour
 
     void OnGUI()
     {
+        if (!showHud) return;
+
         var kbc = GetComponent<KeyboardDroneController>();
         if (kbc != null && kbc.Mode == KeyboardDroneController.ControlMode.FreeFlight)
             return;
