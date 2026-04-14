@@ -32,7 +32,7 @@ public class DroneCamera : MonoBehaviour
     {
         if (!target) return;
 
-        if (Input.GetKeyDown(KeyCode.C))
+        if (Input.GetKeyDown(KeyCode.C) && GameManager.Instance.State == GameManager.GameState.Running)
         {
             currentMode = (CameraMode)(((int)currentMode + 1) % 3);
         }
@@ -47,17 +47,20 @@ public class DroneCamera : MonoBehaviour
 
     void UpdateFollowView()
     {
-        if (Input.GetMouseButton(1))
+        if (GameManager.Instance.State == GameManager.GameState.Running)
         {
-            orbitX += Mathf.Clamp(Input.GetAxis("Mouse X"), -5f, 5f) * orbitSpeed * Time.deltaTime;
-            orbitY -= Mathf.Clamp(Input.GetAxis("Mouse Y"), -5f, 5f) * orbitSpeed * Time.deltaTime;
-            orbitY = Mathf.Clamp(orbitY, minVerticalAngle, maxVerticalAngle);
-        }
+            if (Input.GetMouseButton(1))
+            {
+                orbitX += Mathf.Clamp(Input.GetAxis("Mouse X"), -5f, 5f) * orbitSpeed * Time.deltaTime;
+                orbitY -= Mathf.Clamp(Input.GetAxis("Mouse Y"), -5f, 5f) * orbitSpeed * Time.deltaTime;
+                orbitY = Mathf.Clamp(orbitY, minVerticalAngle, maxVerticalAngle);
+            }
 
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (scroll != 0f)
-        {
-            followDistance = Mathf.Clamp(followDistance - scroll * zoomSpeed, minZoomDistance, maxZoomDistance);
+            float scroll = Input.GetAxis("Mouse ScrollWheel");
+            if (scroll != 0f)
+            {
+                followDistance = Mathf.Clamp(followDistance - scroll * zoomSpeed, minZoomDistance, maxZoomDistance);
+            }
         }
 
         Quaternion rotation = Quaternion.Euler(orbitY, orbitX, 0);
@@ -65,7 +68,9 @@ public class DroneCamera : MonoBehaviour
 
         float dist = followDistance;
         if (Physics.SphereCast(target.position, collisionRadius, dir, out RaycastHit hit, followDistance, collisionMask))
+        {
             dist = Mathf.Max(hit.distance - collisionSkinWidth, minZoomDistance);
+        }
 
         transform.position = target.position + dir * dist;
         transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(target.position - transform.position), smoothSpeed * Time.deltaTime);
@@ -80,9 +85,7 @@ public class DroneCamera : MonoBehaviour
 
     void UpdateBottomView()
     {
-        transform.position = Vector3.Lerp(transform.position,
-            target.position + Vector3.down * bottomViewHeight, smoothSpeed * Time.deltaTime);
-        transform.rotation = Quaternion.Lerp(transform.rotation,
-            Quaternion.LookRotation(Vector3.down, target.forward), smoothSpeed * Time.deltaTime);
+        transform.position = Vector3.Lerp(transform.position, target.position + Vector3.down * bottomViewHeight, smoothSpeed * Time.deltaTime);
+        transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(Vector3.down, target.forward), smoothSpeed * Time.deltaTime);
     }
 }

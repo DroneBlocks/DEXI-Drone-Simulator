@@ -50,6 +50,7 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
 
     public void ApplyPhysics(Rigidbody rb)
     {
+        if (GameManager.Instance.State != GameManager.GameState.Running) return;
         if (!HasReceivedData || rb == null) return;
 
         timeSinceLastMessage += Time.fixedDeltaTime;
