@@ -1,8 +1,9 @@
-using UnityEngine;
-using UnityEngine.InputSystem;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using UnityEngine;
+using UnityEngine.InputSystem;
 
 
 public class AnswerKey
@@ -42,13 +43,20 @@ public class GameManager : MonoBehaviour
     public List<LandingZone> AllLandingZones => allLandingZones;
     public List<FlyThroughGate> AllGates => allGates;
 
+    [Header("Scoring")]
+    public int scanMultiplier = 1;
+    public int ledMultiplier = 3;
+    public int bridgeMultiplier = 10;
+    public int landingMultiplier = 5;
+
     public GameScoreUpdate LatestScore => latestScore;
 
+    public int baseScore = 10;
+    public int finalScore = 0;
 
     private List<ScanTarget> allTargets = new List<ScanTarget>();
     private List<LandingZone> allLandingZones = new List<LandingZone>();
     private List<FlyThroughGate> allGates = new List<FlyThroughGate>();
-
 
     private GameScoreSubscriber scoreSubscriber;
 
@@ -58,6 +66,7 @@ public class GameManager : MonoBehaviour
 
     private bool hasInitialized;
     private string answerKeyTopic;
+    private string totalPointsTopic;
     private string gateEventTopic;
     private string landingEventTopic;
     private string finalTimeTopic;
@@ -86,6 +95,8 @@ public class GameManager : MonoBehaviour
         gateEventTopic = ROSBridgeManager.Instance.ApplyNamespace("/game/gate_event");
         landingEventTopic = ROSBridgeManager.Instance.ApplyNamespace("/game/landing_event");
         finalTimeTopic = ROSBridgeManager.Instance.ApplyNamespace("/game/final_time");
+        totalPointsTopic = ROSBridgeManager.Instance.ApplyNamespace("/game/total_points");
+
         ROSBridgeManager.Instance.OnConnected += OnROSConnected;
 
         if (ROSBridgeManager.Instance.IsConnected)
@@ -108,6 +119,7 @@ public class GameManager : MonoBehaviour
         ROSBridgeManager.Instance.Advertise(gateEventTopic, "std_msgs/msg/String");
         ROSBridgeManager.Instance.Advertise(landingEventTopic, "std_msgs/msg/String");
         ROSBridgeManager.Instance.Advertise(finalTimeTopic, "std_msgs/msg/String");
+        ROSBridgeManager.Instance.Advertise(totalPointsTopic, "std_msgs/msg/String");
         hasAdvertisedTopics = true;
     }
 
@@ -116,11 +128,31 @@ public class GameManager : MonoBehaviour
         latestScore = score;
         scoreMessageTimer = SCORE_MESSAGE_DURATION;
 
+        string[] scannedSplit = score.detected.Split('/');
+        string[] ledSplit = score.led_correct.Split('/');
+
+        int.TryParse(scannedSplit[0], out int targetsScanned);
+        int.TryParse(ledSplit[0], out int ledsCorrect);
+
+        int scannedPoints = targetsScanned * scanMultiplier;
+        int ledPoints = ledsCorrect * ledMultiplier;
+        int bridgePoints = score.gate_correct ? bridgeMultiplier : 0;
+        int landingPoints = score.landings * landingMultiplier;
+
+        float totalPoints = scannedPoints + ledPoints + bridgePoints + landingPoints;
+        float timeFactor = 1f / Mathf.Sqrt(elapsedTime);
+        float scaledScore = totalPoints * timeFactor;
+
+        finalScore = Mathf.Max(baseScore, (int)scaledScore);
+
         if (score.game_complete && state == GameState.Running)
         {
             state = GameState.Completed;
             score.elapsed_seconds = elapsedTime.ToString("F2");
+
             PublishFinalTime();
+            PublishTotalPoints();
+
             Debug.Log($"GameManager: Game COMPLETED in {elapsedTime:F2}s");
         }
 
@@ -210,7 +242,7 @@ public class GameManager : MonoBehaviour
                 t.SetReal(false);
             }
 
-            int realIndex = Random.Range(0, targets.Count);
+            int realIndex = UnityEngine.Random.Range(0, targets.Count);
             ScanTarget target = targets[realIndex];
 
             target.SetReal(true);
@@ -255,7 +287,7 @@ public class GameManager : MonoBehaviour
 
         for (int i = positions.Length - 1; i > 0; i--)
         {
-            int j = Random.Range(0, i + 1);
+            int j = UnityEngine.Random.Range(0, i + 1);
             (positions[i], positions[j]) = (positions[j], positions[i]);
         }
 
@@ -361,6 +393,20 @@ public class GameManager : MonoBehaviour
         var msg = new { data = JsonConvert.SerializeObject(finalTime) };
         await ROSBridgeManager.Instance.Publish(finalTimeTopic, "std_msgs/msg/String", msg);
         Debug.Log($"GameManager: Published final time {elapsedTime:F2}s to {finalTimeTopic}");
+    }
+
+    private async void PublishTotalPoints()
+    {
+        if (!ROSBridgeManager.Instance.IsConnected) return;
+
+        var totalPoints = new
+        {
+            points = finalScore
+        };
+
+        var msg = new { data = JsonConvert.SerializeObject(totalPoints) };
+        await ROSBridgeManager.Instance.Publish(totalPointsTopic, "std_msgs/msg/String", msg);
+        Debug.Log($"GameManager: Published total points {finalScore} pts to {totalPointsTopic}");
     }
 
     private async void PublishLandingEvent(LandingZone zone)
