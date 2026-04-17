@@ -91,6 +91,17 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    public void ResetGame()
+    {
+        GameManager.Instance.ResetGame();
+        GameManager.Instance.StartGame();
+    }
+
+    public void ViewLeaderboard()
+    {
+        // for when its real
+    }
+
     public void StartGame()
     {
         GameManager.Instance.StartGame();

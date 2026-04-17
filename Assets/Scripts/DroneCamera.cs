@@ -22,11 +22,22 @@ public class DroneCamera : MonoBehaviour
     public float fpvHeightOffset = 0.2f;
     public float bottomViewHeight = 0.5f;
 
+    public float orbitSpinSpeed = 200f;
+    public float orbitSpinRadius = 2f;
+    public float orbitSpinHeight = 0.5f;
+
+    private GameManager.GameState lastState;
     private enum CameraMode { Follow, FPV, Bottom }
     private CameraMode currentMode = CameraMode.Follow;
 
     private float orbitX = 0f;
     private float orbitY = 20f;
+    private float baseFollowDistance = 0f;
+
+    private void Awake()
+    {
+        baseFollowDistance = followDistance;
+    }
 
     void LateUpdate()
     {
@@ -47,6 +58,17 @@ public class DroneCamera : MonoBehaviour
 
     void UpdateFollowView()
     {
+        if (lastState != GameManager.Instance.State)
+        {
+            if (GameManager.Instance.State != GameManager.GameState.Running)
+            {
+                orbitX = 0f;
+                followDistance = baseFollowDistance;
+            }
+
+            lastState = GameManager.Instance.State;
+        }
+
         if (GameManager.Instance.State == GameManager.GameState.Running)
         {
             if (Input.GetMouseButton(1))
@@ -61,6 +83,13 @@ public class DroneCamera : MonoBehaviour
             {
                 followDistance = Mathf.Clamp(followDistance - scroll * zoomSpeed, minZoomDistance, maxZoomDistance);
             }
+        } 
+        else
+        {
+            orbitX += orbitSpinSpeed * Time.deltaTime;
+            orbitY = orbitSpinHeight;
+
+            followDistance = orbitSpinRadius;
         }
 
         Quaternion rotation = Quaternion.Euler(orbitY, orbitX, 0);
