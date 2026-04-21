@@ -344,44 +344,4 @@ public class ROSCameraPublisher : MonoBehaviour
             renderTexture.Release();
         }
     }
-
-    private void OnGUI()
-    {
-        // Toggle auto-publish button
-        if (showPublishButton)
-        {
-            string buttonText = autoPublish ? "Stop Publishing" : "Start Publishing";
-            Color buttonColor = autoPublish ? new Color(1f, 0.3f, 0.3f) : new Color(0.3f, 1f, 0.3f);
-
-            GUI.backgroundColor = buttonColor;
-            if (GUI.Button(new Rect(10, 50, 200, 30), buttonText))
-            {
-                autoPublish = !autoPublish;
-                Debug.Log($"Camera auto-publish {(autoPublish ? "started" : "stopped")}");
-            }
-            GUI.backgroundColor = Color.white;
-        }
-
-        // FPS display in bottom left corner
-        if (showFPS)
-        {
-            int h = Screen.height;
-            string fpsText = $"FPS: {currentFPS:F1}";
-
-            // Create a style for the FPS text
-            GUIStyle style = new GUIStyle(GUI.skin.label);
-            style.fontSize = 16;
-            style.normal.textColor = Color.white;
-            style.fontStyle = FontStyle.Bold;
-
-            // Add a dark background for better visibility
-            Rect bgRect = new Rect(10, h - 40, 110, 30);
-            GUI.color = new Color(0, 0, 0, 0.7f);
-            GUI.DrawTexture(bgRect, Texture2D.whiteTexture);
-            
-            // Draw the FPS text
-            GUI.color = Color.white;
-            GUI.Label(bgRect, fpsText, style);
-        }
-    }
 } 

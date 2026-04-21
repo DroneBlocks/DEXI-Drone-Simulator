@@ -22,17 +22,28 @@ public class DroneCamera : MonoBehaviour
     public float fpvHeightOffset = 0.2f;
     public float bottomViewHeight = 0.5f;
 
+    public float orbitSpinSpeed = 200f;
+    public float orbitSpinRadius = 2f;
+    public float orbitSpinHeight = 0.5f;
+
+    private GameManager.GameState lastState;
     private enum CameraMode { Follow, FPV, Bottom }
     private CameraMode currentMode = CameraMode.Follow;
 
     private float orbitX = 0f;
     private float orbitY = 20f;
+    private float baseFollowDistance = 0f;
+
+    private void Awake()
+    {
+        baseFollowDistance = followDistance;
+    }
 
     void LateUpdate()
     {
         if (!target) return;
 
-        if (Input.GetKeyDown(KeyCode.C))
+        if (Input.GetKeyDown(KeyCode.C) && GameManager.Instance.State == GameManager.GameState.Running)
         {
             currentMode = (CameraMode)(((int)currentMode + 1) % 3);
         }
@@ -47,17 +58,38 @@ public class DroneCamera : MonoBehaviour
 
     void UpdateFollowView()
     {
-        if (Input.GetMouseButton(1))
+        if (lastState != GameManager.Instance.State)
         {
-            orbitX += Mathf.Clamp(Input.GetAxis("Mouse X"), -5f, 5f) * orbitSpeed * Time.deltaTime;
-            orbitY -= Mathf.Clamp(Input.GetAxis("Mouse Y"), -5f, 5f) * orbitSpeed * Time.deltaTime;
-            orbitY = Mathf.Clamp(orbitY, minVerticalAngle, maxVerticalAngle);
+            if (GameManager.Instance.State != GameManager.GameState.Running)
+            {
+                orbitX = 0f;
+                followDistance = baseFollowDistance;
+            }
+
+            lastState = GameManager.Instance.State;
         }
 
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (scroll != 0f)
+        if (GameManager.Instance.State == GameManager.GameState.Running)
         {
-            followDistance = Mathf.Clamp(followDistance - scroll * zoomSpeed, minZoomDistance, maxZoomDistance);
+            if (Input.GetMouseButton(1))
+            {
+                orbitX += Mathf.Clamp(Input.GetAxis("Mouse X"), -5f, 5f) * orbitSpeed * Time.deltaTime;
+                orbitY -= Mathf.Clamp(Input.GetAxis("Mouse Y"), -5f, 5f) * orbitSpeed * Time.deltaTime;
+                orbitY = Mathf.Clamp(orbitY, minVerticalAngle, maxVerticalAngle);
+            }
+
+            float scroll = Input.GetAxis("Mouse ScrollWheel");
+            if (scroll != 0f)
+            {
+                followDistance = Mathf.Clamp(followDistance - scroll * zoomSpeed, minZoomDistance, maxZoomDistance);
+            }
+        } 
+        else
+        {
+            orbitX += orbitSpinSpeed * Time.deltaTime;
+            orbitY = orbitSpinHeight;
+
+            followDistance = orbitSpinRadius;
         }
 
         Quaternion rotation = Quaternion.Euler(orbitY, orbitX, 0);
@@ -65,7 +97,9 @@ public class DroneCamera : MonoBehaviour
 
         float dist = followDistance;
         if (Physics.SphereCast(target.position, collisionRadius, dir, out RaycastHit hit, followDistance, collisionMask))
+        {
             dist = Mathf.Max(hit.distance - collisionSkinWidth, minZoomDistance);
+        }
 
         transform.position = target.position + dir * dist;
         transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(target.position - transform.position), smoothSpeed * Time.deltaTime);
@@ -80,9 +114,7 @@ public class DroneCamera : MonoBehaviour
 
     void UpdateBottomView()
     {
-        transform.position = Vector3.Lerp(transform.position,
-            target.position + Vector3.down * bottomViewHeight, smoothSpeed * Time.deltaTime);
-        transform.rotation = Quaternion.Lerp(transform.rotation,
-            Quaternion.LookRotation(Vector3.down, target.forward), smoothSpeed * Time.deltaTime);
+        transform.position = Vector3.Lerp(transform.position, target.position + Vector3.down * bottomViewHeight, smoothSpeed * Time.deltaTime);
+        transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(Vector3.down, target.forward), smoothSpeed * Time.deltaTime);
     }
 }

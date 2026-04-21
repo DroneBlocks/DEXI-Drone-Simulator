@@ -167,6 +167,8 @@ public class ROSKeyboardController : MonoBehaviour
 
     void Update()
     {
+        if (GameManager.Instance.State != GameManager.GameState.Running) return;
+
         var kb = Keyboard.current;
         if (kb == null) return;
 
