@@ -30,6 +30,7 @@ public class ScanTarget : MonoBehaviour
 
     [Header("Apriltag Settings")]
     public int apriltagID = 0;
+    public Texture[] fakeApriltags;
 
     [Header("YOLO Settings")]
     public string yoloLabel = "";
@@ -72,12 +73,20 @@ public class ScanTarget : MonoBehaviour
             }
             else
             {
-                // Blank it out — flat gray
                 if (blankMaterial == null)
                 {
                     blankMaterial = new Material(originalMaterial);
-                    blankMaterial.mainTexture = null;
-                    blankMaterial.color = new Color(0.3f, 0.3f, 0.3f);
+
+                    if (targetType == TargetType.AprilTag && fakeApriltags.Length > 0)
+                    {
+                        int fakeIndex = Random.Range(0, fakeApriltags.Length);
+                        blankMaterial.mainTexture = fakeApriltags[fakeIndex];
+                    }
+                    else
+                    {
+                        blankMaterial.mainTexture = null;
+                        blankMaterial.color = new Color(0.3f, 0.3f, 0.3f);
+                    }
                 }
 
                 targetRenderer.material = blankMaterial;

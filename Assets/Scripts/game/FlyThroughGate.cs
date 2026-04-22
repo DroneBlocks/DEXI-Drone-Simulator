@@ -41,89 +41,10 @@ public class FlyThroughGate : MonoBehaviour
 
     void Start()
     {
-        BuildGate();
-
         if (GameManager.Instance != null)
         {
             GameManager.Instance.RegisterGate(this);
         }
-    }
-
-    void BuildGate()
-    {
-        float totalWidth = openingWidth + frameBorder * 2;
-        float totalHeight = openingHeight + frameBorder * 2;
-        frameRenderers = new Renderer[4];
-
-        // All positions are centers of each cube piece
-        // Bottom: spans full width, sits below the opening
-        frameRenderers[0] = CreateWallPiece("Bottom",
-            new Vector3(0, frameBorder / 2, 0),
-            new Vector3(totalWidth, frameBorder, wallThickness));
-
-        // Top: spans full width, sits above the opening
-        frameRenderers[1] = CreateWallPiece("Top",
-            new Vector3(0, frameBorder + openingHeight + frameBorder / 2, 0),
-            new Vector3(totalWidth, frameBorder, wallThickness));
-
-        // Left: only spans the opening height, between top and bottom
-        frameRenderers[2] = CreateWallPiece("Left",
-            new Vector3(-(openingWidth / 2 + frameBorder / 2), frameBorder + openingHeight / 2, 0),
-            new Vector3(frameBorder, openingHeight, wallThickness));
-
-        // Right: same as left, other side
-        frameRenderers[3] = CreateWallPiece("Right",
-            new Vector3(openingWidth / 2 + frameBorder / 2, frameBorder + openingHeight / 2, 0),
-            new Vector3(frameBorder, openingHeight, wallThickness));
-
-        // Trigger zone in the opening
-        triggerZone = new GameObject("TriggerZone");
-        triggerZone.transform.SetParent(transform);
-        triggerZone.transform.localPosition = new Vector3(0, frameBorder + openingHeight / 2, 0);
-        triggerZone.transform.localRotation = Quaternion.identity;
-
-        // Rigidbody needed so trigger events fire even when drone is kinematic
-        Rigidbody triggerRb = triggerZone.AddComponent<Rigidbody>();
-        triggerRb.isKinematic = true;
-
-        BoxCollider trigger = triggerZone.AddComponent<BoxCollider>();
-        trigger.isTrigger = true;
-        trigger.size = new Vector3(openingWidth * 0.9f, openingHeight * 0.9f, wallThickness * 4);
-
-        // Visual indicator for the trigger zone (semi-transparent quad)
-        GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        visual.name = "TriggerVisual";
-        visual.transform.SetParent(triggerZone.transform);
-        visual.transform.localPosition = Vector3.zero;
-        visual.transform.localRotation = Quaternion.identity;
-        visual.transform.localScale = new Vector3(openingWidth * 0.9f, openingHeight * 0.9f, 1f);
-
-        // Remove the quad's collider
-        Collider visualCol = visual.GetComponent<Collider>();
-        if (visualCol != null) Destroy(visualCol);
-
-        triggerRenderer = visual.GetComponent<Renderer>();
-        Material mat = RuntimeMaterials.Instance.CreateLitTransparent(triggerIdleColor);
-        triggerRenderer.material = mat;
-
-        // Add the trigger detection script to the trigger zone
-        GateTriggerDetector detector = triggerZone.AddComponent<GateTriggerDetector>();
-        detector.gate = this;
-    }
-
-    Renderer CreateWallPiece(string name, Vector3 localPos, Vector3 scale)
-    {
-        GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        wall.name = $"Frame_{name}";
-        wall.transform.SetParent(transform);
-        wall.transform.localPosition = localPos;
-        wall.transform.localRotation = Quaternion.identity;
-        wall.transform.localScale = scale;
-
-        Material mat = RuntimeMaterials.Instance.CreateLit(frameColor);
-        Renderer rend = wall.GetComponent<Renderer>();
-        rend.material = mat;
-        return rend;
     }
 
     /// <summary>
@@ -149,7 +70,7 @@ public class FlyThroughGate : MonoBehaviour
         isTriggered = true;
 
         SetFrameColor(triggeredColor);
-        // Hide the trigger plane once passed
+
         if (triggerRenderer != null)
             triggerRenderer.enabled = false;
 

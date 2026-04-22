@@ -244,10 +244,16 @@ public class GameManager : MonoBehaviour
 
             int realIndex = UnityEngine.Random.Range(0, targets.Count);
             ScanTarget target = targets[realIndex];
-
             target.SetReal(true);
 
             Debug.Log($"GameManager: Group '{group.Key}' — target '{target.targetName}' is REAL " + $"at position ({target.transform.position.x:F1}, {target.transform.position.z:F1})");
+        }
+
+        foreach (var gate in allGates)
+        {
+            gate.linkedScanTarget = allTargets
+                .OrderBy(t => Vector3.Distance(gate.transform.position, t.transform.position))
+                .FirstOrDefault();
         }
 
         PublishAnswerKey();
