@@ -10,6 +10,7 @@ public class ScanTarget : MonoBehaviour
     public enum TargetType { AprilTag, YoloImage }
     public enum YoloTargetPlace { Cabin, Bridge }
 
+
     [Header("Target Identity")]
     [Tooltip("Which group this target belongs to (e.g. 'apriltags' or 'yolo_vehicles')")]
     public string groupName = "default";
@@ -31,6 +32,7 @@ public class ScanTarget : MonoBehaviour
     [Header("Apriltag Settings")]
     public int apriltagID = 0;
     public Texture[] fakeApriltags;
+
 
     [Header("YOLO Settings")]
     public string yoloLabel = "";

@@ -50,6 +50,7 @@ public class GameManager : MonoBehaviour
     public int landingMultiplier = 5;
 
     public GameScoreUpdate LatestScore => latestScore;
+    public event Action<GameScoreUpdate> OnScoreUpdateReceived;
 
     public int baseScore = 10;
     public int finalScore = 0;
@@ -157,6 +158,8 @@ public class GameManager : MonoBehaviour
         }
 
         Debug.Log($"GameManager: Score update — {score.detected} detected, {score.led_correct} LED correct, complete: {score.game_complete}");
+
+        OnScoreUpdateReceived.Invoke(score);
     }
 
     void Update()
