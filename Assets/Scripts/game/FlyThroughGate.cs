@@ -120,26 +120,3 @@ public class FlyThroughGate : MonoBehaviour
         #endif
     }
 }
-
-/// <summary>
-/// Helper component on the trigger zone child object.
-/// Forwards trigger events to the parent FlyThroughGate.
-/// </summary>
-public class GateTriggerDetector : MonoBehaviour
-{
-    [HideInInspector] public FlyThroughGate gate;
-
-    void OnTriggerEnter(Collider other)
-    {
-        DroneController drone = other.GetComponentInParent<DroneController>();
-        if (drone != null && gate != null)
-            gate.OnDroneEntered();
-    }
-
-    void OnTriggerExit(Collider other)
-    {
-        DroneController drone = other.GetComponentInParent<DroneController>();
-        if (drone != null && gate != null)
-            gate.OnDroneExited();
-    }
-}

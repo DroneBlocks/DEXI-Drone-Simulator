@@ -49,6 +49,9 @@ public class GameManager : MonoBehaviour
     public int bridgeMultiplier = 10;
     public int landingMultiplier = 5;
 
+    [Header("Drone")]
+    public Vector3 droneSpawnPosition = new Vector3(0f, 0.1f, 0f);
+
     public GameScoreUpdate LatestScore => latestScore;
     public event Action<GameScoreUpdate> OnScoreUpdateReceived;
 
@@ -195,7 +198,8 @@ public class GameManager : MonoBehaviour
         if (kb == null) return;
         if (kb.rKey.wasPressedThisFrame)
         {
-            ResetGame();
+            // should not be needed since we want the game to be reset by restarting the simulation, but leaving in for easy testing
+            //ResetGame();
         }
         else if (kb.tKey.wasPressedThisFrame && state == GameState.WaitingToStart)
         {
@@ -356,9 +360,7 @@ public class GameManager : MonoBehaviour
     public void ReportLanding(LandingZone zone)
     {
         if (state != GameState.Running) return;
-        if (zone.IsLanded) return;
 
-        zone.MarkLanded();
         Debug.Log($"GameManager: Landing confirmed on '{zone.zoneName}'");
         PublishLandingEvent(zone);
     }

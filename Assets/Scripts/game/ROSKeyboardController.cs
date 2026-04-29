@@ -68,9 +68,10 @@ public class ROSKeyboardController : MonoBehaviour
     public string serviceType = "dexi_interfaces/srv/ExecuteBlocklyCommand";
 
     [Header("State")]
-    [SerializeField] private bool inFlight;
-    [SerializeField] private bool isArming;
-    [SerializeField] private bool freeFlightMode;
+    public bool inFlight;
+    public bool isArming;
+    public bool freeFlightMode;
+    public bool resetOdometryOnTakeoff = true;
 
     [Header("Free Flight")]
     public float freeFlightSpeed = 3f;
@@ -96,6 +97,11 @@ public class ROSKeyboardController : MonoBehaviour
         var drone = FindFirstObjectByType<DroneController>();
         if (drone != null)
             droneRb = drone.GetComponent<Rigidbody>();
+
+        if (odometry != null && resetOdometryOnTakeoff)
+        {
+            odometry.ResetToSpawn(GameManager.Instance.droneSpawnPosition);
+        }
     }
 
     // --- Browser Gamepad API (WebGL) ---
@@ -213,6 +219,11 @@ public class ROSKeyboardController : MonoBehaviour
             inFlight = true;
         }
 
+        if (!PX4StateManager.Instance.IsArmed)
+        {
+            inFlight = false;
+        }
+
         bool takeoffPressed = kb.tKey.wasPressedThisFrame || ReadButton(activeMapping.buttonTakeoff);
         bool landPressed = kb.lKey.wasPressedThisFrame || ReadButton(activeMapping.buttonLand);
 
@@ -300,6 +311,7 @@ public class ROSKeyboardController : MonoBehaviour
     void ArmAndTakeoff()
     {
         isArming = true;
+
         string ns = ROSBridgeManager.Instance.ApplyNamespace(serviceEndpoint);
 
         ROSBridgeManager.Instance.CallService(ns, serviceType,
