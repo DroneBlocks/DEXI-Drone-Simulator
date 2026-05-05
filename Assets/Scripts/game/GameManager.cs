@@ -44,10 +44,18 @@ public class GameManager : MonoBehaviour
     public List<FlyThroughGate> AllGates => allGates;
 
     [Header("Scoring")]
-    public int scanMultiplier = 1;
-    public int ledMultiplier = 3;
-    public int bridgeMultiplier = 10;
-    public int landingMultiplier = 5;
+    // 4 targets * 50 = 200, 4 LEDs * 25 = 100, bridge 50, landing 50 → 400 max from actions.
+    // Time bonus adds 0–100 on top: 100 at <=180s, linearly down to 0 at >=360s.
+    // Grand total possible = 500.
+    public int scanMultiplier = 50;
+    public int ledMultiplier = 25;
+    public int bridgeMultiplier = 50;
+    public int landingMultiplier = 50;
+
+    [Header("Time Bonus")]
+    public float timeBonusFullSeconds = 180f;   // <= this time gets the full bonus
+    public float timeBonusZeroSeconds = 360f;   // >= this time gets zero bonus
+    public int timeBonusMaxPoints = 100;
 
     [Header("Drone")]
     public Vector3 droneSpawnPosition = new Vector3(0f, 0.1f, 0f);
@@ -55,7 +63,6 @@ public class GameManager : MonoBehaviour
     public GameScoreUpdate LatestScore => latestScore;
     public event Action<GameScoreUpdate> OnScoreUpdateReceived;
 
-    public int baseScore = 10;
     public int finalScore = 0;
 
     private List<ScanTarget> allTargets = new List<ScanTarget>();
@@ -143,11 +150,28 @@ public class GameManager : MonoBehaviour
         int bridgePoints = score.gate_correct ? bridgeMultiplier : 0;
         int landingPoints = score.landings * landingMultiplier;
 
-        float totalPoints = scannedPoints + ledPoints + bridgePoints + landingPoints;
-        float timeFactor = 1f / Mathf.Sqrt(elapsedTime);
-        float scaledScore = totalPoints * timeFactor;
+        int actionPoints = scannedPoints + ledPoints + bridgePoints + landingPoints;
 
-        finalScore = Mathf.Max(baseScore, (int)scaledScore);
+        // Time bonus: linear interpolation from timeBonusMaxPoints down to 0
+        // between timeBonusFullSeconds (full bonus) and timeBonusZeroSeconds.
+        // Below the full threshold = max bonus; above the zero threshold = 0.
+        int timeBonus;
+        if (elapsedTime <= timeBonusFullSeconds)
+        {
+            timeBonus = timeBonusMaxPoints;
+        }
+        else if (elapsedTime >= timeBonusZeroSeconds)
+        {
+            timeBonus = 0;
+        }
+        else
+        {
+            float window = timeBonusZeroSeconds - timeBonusFullSeconds;
+            float remaining = timeBonusZeroSeconds - elapsedTime;
+            timeBonus = Mathf.RoundToInt(timeBonusMaxPoints * (remaining / window));
+        }
+
+        finalScore = actionPoints + timeBonus;
 
         if (score.game_complete && state == GameState.Running)
         {
