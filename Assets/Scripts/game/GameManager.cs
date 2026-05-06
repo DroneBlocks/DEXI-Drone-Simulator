@@ -44,18 +44,23 @@ public class GameManager : MonoBehaviour
     public List<FlyThroughGate> AllGates => allGates;
 
     [Header("Scoring")]
-    // 4 targets * 50 = 200, 4 LEDs * 25 = 100, bridge 50, landing 50 → 400 max from actions.
-    // Time bonus adds 0–100 on top: 100 at <=180s, linearly down to 0 at >=360s.
+    // 80/20 coding-vs-manual split. Coding (detection + LED) = 400 max:
+    //   4 targets * 25 = 100  (subscribe + extract — cheap)
+    //   4 LEDs    * 75 = 300  (the actual switch/case logic — the work)
+    // Manual (tunnel + landing + speed) = 100 max:
+    //   bridge  25
+    //   landing 25
+    //   time bonus 0–50 (full ≤180s, zero ≥360s, linear between)
     // Grand total possible = 500.
-    public int scanMultiplier = 50;
-    public int ledMultiplier = 25;
-    public int bridgeMultiplier = 50;
-    public int landingMultiplier = 50;
+    public int scanMultiplier = 25;
+    public int ledMultiplier = 75;
+    public int bridgeMultiplier = 25;
+    public int landingMultiplier = 25;
 
     [Header("Time Bonus")]
     public float timeBonusFullSeconds = 180f;   // <= this time gets the full bonus
     public float timeBonusZeroSeconds = 360f;   // >= this time gets zero bonus
-    public int timeBonusMaxPoints = 100;
+    public int timeBonusMaxPoints = 50;
 
     [Header("Drone")]
     public Vector3 droneSpawnPosition = new Vector3(0f, 0.1f, 0f);
