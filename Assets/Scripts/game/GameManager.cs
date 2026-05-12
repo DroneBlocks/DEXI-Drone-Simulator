@@ -145,7 +145,10 @@ public class GameManager : MonoBehaviour
 
         finalScore = Mathf.Max(baseScore, (int)scaledScore);
 
-        if (score.game_complete && state == GameState.Running)
+        // Treat first landing as end-of-run, whether or not all targets/LEDs/gate are done.
+        // Without this, partial runs never publish final_time/total_points and the
+        // leaderboard falls back to a wrong wall clock.
+        if ((score.game_complete || score.landings > 0) && state == GameState.Running)
         {
             state = GameState.Completed;
             score.elapsed_seconds = elapsedTime.ToString("F2");
@@ -153,7 +156,7 @@ public class GameManager : MonoBehaviour
             PublishFinalTime();
             PublishTotalPoints();
 
-            Debug.Log($"GameManager: Game COMPLETED in {elapsedTime:F2}s");
+            Debug.Log($"GameManager: Run ended in {elapsedTime:F2}s (complete: {score.game_complete}, landings: {score.landings})");
         }
 
         Debug.Log($"GameManager: Score update — {score.detected} detected, {score.led_correct} LED correct, complete: {score.game_complete}");
