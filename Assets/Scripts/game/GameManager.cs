@@ -44,14 +44,30 @@ public class GameManager : MonoBehaviour
     public List<FlyThroughGate> AllGates => allGates;
 
     [Header("Scoring")]
-    public int scanMultiplier = 1;
-    public int ledMultiplier = 3;
-    public int bridgeMultiplier = 10;
-    public int landingMultiplier = 5;
+    // 80/20 coding-vs-manual split. Coding (detection + LED) = 400 max:
+    //   4 targets * 25 = 100  (subscribe + extract — cheap)
+    //   4 LEDs    * 75 = 300  (the actual switch/case logic — the work)
+    // Manual (tunnel + landing + speed) = 100 max:
+    //   bridge  25
+    //   landing 25
+    //   time bonus 0–50 (full ≤180s, zero ≥360s, linear between)
+    // Grand total possible = 500.
+    public int scanMultiplier = 25;
+    public int ledMultiplier = 75;
+    public int bridgeMultiplier = 25;
+    public int landingMultiplier = 25;
+
+    [Header("Time Bonus")]
+    public float timeBonusFullSeconds = 180f;   // <= this time gets the full bonus
+    public float timeBonusZeroSeconds = 360f;   // >= this time gets zero bonus
+    public int timeBonusMaxPoints = 50;
+
+    [Header("Drone")]
+    public Vector3 droneSpawnPosition = new Vector3(0f, 0.1f, 0f);
 
     public GameScoreUpdate LatestScore => latestScore;
+    public event Action<GameScoreUpdate> OnScoreUpdateReceived;
 
-    public int baseScore = 10;
     public int finalScore = 0;
 
     private List<ScanTarget> allTargets = new List<ScanTarget>();
@@ -139,11 +155,28 @@ public class GameManager : MonoBehaviour
         int bridgePoints = score.gate_correct ? bridgeMultiplier : 0;
         int landingPoints = score.landings * landingMultiplier;
 
-        float totalPoints = scannedPoints + ledPoints + bridgePoints + landingPoints;
-        float timeFactor = 1f / Mathf.Sqrt(elapsedTime);
-        float scaledScore = totalPoints * timeFactor;
+        int actionPoints = scannedPoints + ledPoints + bridgePoints + landingPoints;
 
-        finalScore = Mathf.Max(baseScore, (int)scaledScore);
+        // Time bonus: linear interpolation from timeBonusMaxPoints down to 0
+        // between timeBonusFullSeconds (full bonus) and timeBonusZeroSeconds.
+        // Below the full threshold = max bonus; above the zero threshold = 0.
+        int timeBonus;
+        if (elapsedTime <= timeBonusFullSeconds)
+        {
+            timeBonus = timeBonusMaxPoints;
+        }
+        else if (elapsedTime >= timeBonusZeroSeconds)
+        {
+            timeBonus = 0;
+        }
+        else
+        {
+            float window = timeBonusZeroSeconds - timeBonusFullSeconds;
+            float remaining = timeBonusZeroSeconds - elapsedTime;
+            timeBonus = Mathf.RoundToInt(timeBonusMaxPoints * (remaining / window));
+        }
+
+        finalScore = actionPoints + timeBonus;
 
         // Treat first landing as end-of-run, whether or not all targets/LEDs/gate are done.
         // Without this, partial runs never publish final_time/total_points and the
@@ -160,6 +193,8 @@ public class GameManager : MonoBehaviour
         }
 
         Debug.Log($"GameManager: Score update — {score.detected} detected, {score.led_correct} LED correct, complete: {score.game_complete}");
+
+        OnScoreUpdateReceived.Invoke(score);
     }
 
     void Update()
@@ -195,7 +230,8 @@ public class GameManager : MonoBehaviour
         if (kb == null) return;
         if (kb.rKey.wasPressedThisFrame)
         {
-            ResetGame();
+            // should not be needed since we want the game to be reset by restarting the simulation, but leaving in for easy testing
+            //ResetGame();
         }
         else if (kb.tKey.wasPressedThisFrame && state == GameState.WaitingToStart)
         {
@@ -356,9 +392,7 @@ public class GameManager : MonoBehaviour
     public void ReportLanding(LandingZone zone)
     {
         if (state != GameState.Running) return;
-        if (zone.IsLanded) return;
 
-        zone.MarkLanded();
         Debug.Log($"GameManager: Landing confirmed on '{zone.zoneName}'");
         PublishLandingEvent(zone);
     }

@@ -16,8 +16,8 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
 {
     [Header("Drone Settings")]
     [SerializeField] private Transform droneTransform;
-    [SerializeField] private Vector3 positionOffset = Vector3.zero;
     [SerializeField] private Vector3 rotationOffset = Vector3.zero;
+    [SerializeField] private Vector3 positionOffset = Vector3.zero;
 
     [Header("Physics Tracking")]
     [SerializeField] private float positionSmoothSpeed = 15f;
@@ -48,6 +48,16 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
     private void OnEnable() => ROSBridgeManager.Instance.RegisterSubscriber(this);
     private void OnDisable() => ROSBridgeManager.Instance.UnregisterSubscriber(this);
 
+
+    private bool _spawnOffsetPending = false;
+    private Vector3 _spawnTarget;
+
+    public void ResetToSpawn(Vector3 spawnPosition)
+    {
+        _spawnTarget = spawnPosition;
+        _spawnOffsetPending = true;
+    }
+
     public void ApplyPhysics(Rigidbody rb)
     {
         if (GameManager.Instance.State != GameManager.GameState.Running) return;
@@ -70,23 +80,31 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
         try
         {
             var odometry = JsonConvert.DeserializeObject<VehicleOdometry>(message);
-            if (odometry == null || !PX4StateManager.Instance.IsArmed) return;
+            if (odometry == null) return;
+            if (float.IsNaN(odometry.q[0]) || float.IsNaN(odometry.position[0])) return;
 
-            Vector3 newPosition = new Vector3(
+            Vector3 rawPosition = new Vector3(
                 odometry.position[1],
                 -odometry.position[2],
                 odometry.position[0]
-            ) + positionOffset;
+            );
+
+            // Calibrate spawn offset from any valid message, armed or not
+            if (_spawnOffsetPending)
+            {
+                positionOffset = _spawnTarget - rawPosition;
+                _spawnOffsetPending = false;
+                Debug.Log($"Spawn offset calibrated: raw={rawPosition}, target={_spawnTarget}, offset={positionOffset}");
+            }
+
+            // Only drive the drone when armed
+            if (!PX4StateManager.Instance.IsArmed) return;
+
+            Vector3 newPosition = rawPosition + positionOffset;
 
             float velocityMagnitude = new Vector3(odometry.velocity[0], odometry.velocity[1], odometry.velocity[2]).magnitude;
             bool isLanded = newPosition.y < landedAltitudeThreshold && velocityMagnitude < landedVelocityThreshold;
             newPosition.y = isLanded ? minimumHeight : Mathf.Max(newPosition.y, minimumHeight);
-
-            if (float.IsNaN(odometry.q[0]))
-            {
-                Debug.LogWarning("Received invalid quaternion (NaN)");
-                return;
-            }
 
             Quaternion newRotation = new Quaternion(odometry.q[2], -odometry.q[3], odometry.q[1], -odometry.q[0]);
             newRotation.Normalize();
@@ -95,8 +113,7 @@ public class DroneOdometrySubscriber : MonoBehaviour, IROSSubscriber
             if (HasReceivedData && Quaternion.Dot(TargetRotation, newRotation) < 0)
                 newRotation = new Quaternion(-newRotation.x, -newRotation.y, -newRotation.z, -newRotation.w);
 
-            if (isFirstData)
-                isFirstData = false;
+            if (isFirstData) isFirstData = false;
 
             timeSinceLastMessage = 0f;
             TargetPosition = newPosition;

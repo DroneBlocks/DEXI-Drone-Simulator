@@ -1,26 +1,20 @@
 using UnityEngine;
 
-/// <summary>
-/// Detects when the drone lands on this zone and takes off again.
-/// The landing is only confirmed once the drone leaves the zone after touching down.
-/// </summary>
 public class LandingZone : MonoBehaviour
 {
     [Header("Landing Zone")]
     public string zoneName = "Landing Pad";
 
-    [Tooltip("Maximum velocity to count as touched down (m/s)")]
+    [Tooltip("Maximum velocity to count as a landing (m/s)")]
     public float landingSpeedThreshold = 0.3f;
 
     [Header("Visuals")]
     public Color idleColor = new Color(0.2f, 0.2f, 0.2f);
-    public Color droneDetectedColor = new Color(0.9f, 0.9f, 0.1f);  // Yellow — drone in zone
-    public Color touchedDownColor = new Color(1f, 0.5f, 0f);         // Orange — touched down, waiting for takeoff
-    public Color completedColor = new Color(0.1f, 0.9f, 0.1f);       // Green — landed and took off
+    public Color droneDetectedColor = new Color(0.9f, 0.9f, 0.1f);
+    public Color completedColor = new Color(0.1f, 0.9f, 0.1f);
 
     [Header("State")]
     [SerializeField] private bool isCompleted;
-    [SerializeField] private bool hasTouchedDown;
     public bool IsLanded => isCompleted;
 
     private bool droneInZone;
@@ -35,14 +29,12 @@ public class LandingZone : MonoBehaviour
         padRenderer = GetComponent<Renderer>();
         SetPadColor(idleColor);
 
-        // Rigidbody needed so trigger events fire even when drone is kinematic
         if (GetComponent<Rigidbody>() == null)
         {
             Rigidbody rb = gameObject.AddComponent<Rigidbody>();
             rb.isKinematic = true;
         }
 
-        // Ensure at least one trigger collider exists
         bool hasTrigger = false;
         foreach (var col in GetComponents<Collider>())
         {
@@ -61,12 +53,14 @@ public class LandingZone : MonoBehaviour
     {
         if (isCompleted || !droneInZone || droneRb == null) return;
 
-        // Detect touchdown: drone is in the zone and slow enough
-        if (!hasTouchedDown && droneRb.linearVelocity.magnitude < landingSpeedThreshold)
+        if (droneRb.linearVelocity.magnitude < landingSpeedThreshold)
         {
-            hasTouchedDown = true;
-            SetPadColor(touchedDownColor);
-            Debug.Log($"LandingZone: Drone touched down on '{zoneName}' — take off to confirm");
+            isCompleted = true;
+            SetPadColor(completedColor);
+            Debug.Log($"LandingZone: Landing CONFIRMED on '{zoneName}'");
+
+            if (GameManager.Instance != null)
+                GameManager.Instance.ReportLanding(this);
         }
     }
 
@@ -90,21 +84,8 @@ public class LandingZone : MonoBehaviour
         droneInZone = false;
         droneRb = null;
 
-        // If drone touched down and now left — landing is complete
-        if (hasTouchedDown && !isCompleted)
-        {
-            isCompleted = true;
-            SetPadColor(completedColor);
-            Debug.Log($"LandingZone: Landing CONFIRMED on '{zoneName}' — drone took off");
-
-            if (GameManager.Instance != null)
-                GameManager.Instance.ReportLanding(this);
-        }
-        else if (!isCompleted)
-        {
-            // Drone flew through without slowing down
+        if (!isCompleted)
             SetPadColor(idleColor);
-        }
 
         Debug.Log($"LandingZone: Drone left '{zoneName}'");
     }
@@ -117,7 +98,6 @@ public class LandingZone : MonoBehaviour
     public void ResetState()
     {
         isCompleted = false;
-        hasTouchedDown = false;
         droneInZone = false;
         SetPadColor(idleColor);
     }
@@ -133,10 +113,9 @@ public class LandingZone : MonoBehaviour
         Gizmos.color = isCompleted ? Color.green : new Color(0.2f, 0.8f, 0.2f, 0.5f);
         Gizmos.DrawWireCube(transform.position, new Vector3(0.3f, 0.02f, 0.3f));
 
-        #if UNITY_EDITOR
-        string status = isCompleted ? "COMPLETED" : hasTouchedDown ? "TOUCHED DOWN" : "waiting";
-        UnityEditor.Handles.Label(transform.position + Vector3.up * 0.1f,
-            $"{zoneName}\n{status}");
-        #endif
+#if UNITY_EDITOR
+        string status = isCompleted ? "COMPLETED" : "waiting";
+        UnityEditor.Handles.Label(transform.position + Vector3.up * 0.1f, $"{zoneName}\n{status}");
+#endif
     }
 }

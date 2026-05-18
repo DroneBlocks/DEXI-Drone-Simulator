@@ -1,5 +1,7 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SocialPlatforms.Impl;
 using UnityEngine.UI;
 using static GameManager;
 
@@ -18,9 +20,11 @@ public class UIManager : MonoBehaviour
     public TMP_Text ledsCorrectText;
     public TMP_Text bridgesFlownText;
     public TMP_Text landingsCompletedText;
+    public GameObject correctScanPopupPrefab;
 
     [Header("PiP UI")]
     [SerializeField] private GameObject pipImage;
+    private bool pipEnabled = true;
 
     [Header("Game completed UI")]
     public GameObject gameCompletedPanel;
@@ -28,12 +32,20 @@ public class UIManager : MonoBehaviour
     public TMP_Text finalScoreText;
 
     private GameState lastState;
-    private bool pipEnabled = true;
+    private GameScoreUpdate _prevScore;
+
+    private Coroutine _popupCoroutine;
 
     private void Start()
     {
         UpdateUIState(GameManager.Instance.State);
-        UpdateTargets();
+
+        GameManager.Instance.OnScoreUpdateReceived += OnNewScoreUpdate;
+    }
+
+    private void OnDestroy()
+    {
+        GameManager.Instance.OnScoreUpdateReceived -= OnNewScoreUpdate;
     }
 
     void Update()
@@ -44,7 +56,6 @@ public class UIManager : MonoBehaviour
         {
             float elapsed = GameManager.Instance.ElapsedTime;
             elapsedTimeText.text = $"Time: {elapsed:F1}s";
-            UpdateTargets();
         }
 
         if (state != lastState)
@@ -54,10 +65,9 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    private void UpdateTargets()
-    {
-        GameScoreUpdate score = GameManager.Instance.LatestScore;
 
+    private void OnNewScoreUpdate(GameScoreUpdate score)
+    {
         string detected = "0/3", led_correct = "0/3", gate_correct = "No";
         int landings = 0;
 
@@ -73,6 +83,59 @@ public class UIManager : MonoBehaviour
         ledsCorrectText.text = $"LEDs Correct: {led_correct}";
         bridgesFlownText.text = $"Flew under bridge: {gate_correct}";
         landingsCompletedText.text = $"Landings Completed: {landings} / 1";
+
+        string popupMessage = GetChangedObjectiveText(score);
+        _prevScore = score;
+
+        if (popupMessage != null)
+        {
+            if (_popupCoroutine != null) StopCoroutine(_popupCoroutine);
+            _popupCoroutine = StartCoroutine(SpawnPopupDelayed(popupMessage));
+        }
+    }
+
+    private IEnumerator SpawnPopupDelayed(string message)
+    {
+        yield return new WaitForSeconds(0.5f);
+        GameObject obj = Instantiate(correctScanPopupPrefab, inGamePanel.transform);
+        obj.GetComponent<CorrectScanPopup>().SetObjectiveText(message);
+        _popupCoroutine = null;
+    }
+
+    private string GetChangedObjectiveText(GameScoreUpdate score)
+    {
+        if (score == null) return null;
+
+        int currDetected = int.Parse(score.detected.Split('/')[0]);
+        int prevDetected = _prevScore != null ? int.Parse(_prevScore.detected.Split('/')[0]) : 0;
+
+        int currLedCorrect = int.Parse(score.led_correct.Split('/')[0]);
+        int prevLedCorrect = _prevScore != null ? int.Parse(_prevScore.led_correct.Split('/')[0]) : 0;
+
+        bool prevGate = _prevScore?.gate_correct ?? false;
+        int prevLandings = _prevScore?.landings ?? 0;
+
+        if (currLedCorrect > prevLedCorrect)
+        {
+            return $"Target {currDetected} scanned with correct LED!";
+        }
+
+        if (currDetected > prevDetected)
+        {
+            return $"Target {currDetected} scanned!";
+        }
+
+        if (score.gate_correct && !prevGate)
+        {
+            return "Bridge flown through!";
+        }
+
+        if (score.landings > prevLandings)
+        {
+            return $"Landed Successfully!";
+        }
+
+        return null;
     }
 
     private void UpdateUIState(GameState state)
