@@ -8537,7 +8537,7 @@ MonoBehaviour:
   timeBonusFullSeconds: 90
   timeBonusZeroSeconds: 360
   timeBonusMaxPoints: 50
-  droneSpawnPosition: {x: 0, y: 0.1, z: 0}
+  droneSpawnPosition: {x: 17, y: 0.25, z: 5.25}
   finalScore: 0
 --- !u!4 &2118132797
 Transform:
