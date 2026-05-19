@@ -8530,14 +8530,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   state: 0
   elapsedTime: 0
-  scanMultiplier: 15
-  ledMultiplier: 20
-  bridgeMultiplier: 30
-  landingMultiplier: 20
-  timeBonusFullSeconds: 180
+  scanMultiplier: 75
+  ledMultiplier: 25
+  bridgeMultiplier: 25
+  landingMultiplier: 25
+  timeBonusFullSeconds: 90
   timeBonusZeroSeconds: 360
   timeBonusMaxPoints: 50
-  droneSpawnPosition: {x: 17, y: 0.25, z: 5.25}
+  droneSpawnPosition: {x: 0, y: 0.1, z: 0}
   finalScore: 0
 --- !u!4 &2118132797
 Transform:
