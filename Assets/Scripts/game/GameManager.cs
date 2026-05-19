@@ -45,15 +45,16 @@ public class GameManager : MonoBehaviour
 
     [Header("Scoring")]
     // 80/20 coding-vs-manual split. Coding (detection + LED) = 400 max:
-    //   4 targets * 25 = 100  (subscribe + extract — cheap)
-    //   4 LEDs    * 75 = 300  (the actual switch/case logic — the work)
+    //   4 targets * 75 = 300  (the gating step — find target, parse detection,
+    //                          tolerate decoys via the temporal filter)
+    //   4 LEDs    * 25 = 100  (downstream: switch on class/id, call LED service)
     // Manual (tunnel + landing + speed) = 100 max:
     //   bridge  25
     //   landing 25
-    //   time bonus 0–50 (full ≤180s, zero ≥360s, linear between)
+    //   time bonus 0–50 (full ≤90s, zero ≥360s, linear between)
     // Grand total possible = 500.
-    public int scanMultiplier = 25;
-    public int ledMultiplier = 75;
+    public int scanMultiplier = 75;
+    public int ledMultiplier = 25;
     public int bridgeMultiplier = 25;
     public int landingMultiplier = 25;
 
