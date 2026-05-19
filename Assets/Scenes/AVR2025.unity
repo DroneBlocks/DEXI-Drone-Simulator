@@ -2293,7 +2293,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: e528d0134d2a94ae59d6d49ecad87819, type: 2}
+  - {fileID: 2100000, guid: 56e5a5adcb78542a7b71ca823014139f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -5763,7 +5763,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 56e5a5adcb78542a7b71ca823014139f, type: 2}
+  - {fileID: 2100000, guid: e528d0134d2a94ae59d6d49ecad87819, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -8534,8 +8534,10 @@ MonoBehaviour:
   ledMultiplier: 20
   bridgeMultiplier: 30
   landingMultiplier: 20
+  timeBonusFullSeconds: 180
+  timeBonusZeroSeconds: 360
+  timeBonusMaxPoints: 50
   droneSpawnPosition: {x: 17, y: 0.25, z: 5.25}
-  baseScore: 10
   finalScore: 0
 --- !u!4 &2118132797
 Transform:
