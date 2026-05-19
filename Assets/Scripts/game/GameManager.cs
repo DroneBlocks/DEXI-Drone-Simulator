@@ -58,8 +58,8 @@ public class GameManager : MonoBehaviour
     public int landingMultiplier = 25;
 
     [Header("Time Bonus")]
-    public float timeBonusFullSeconds = 180f;   // <= this time gets the full bonus
-    public float timeBonusZeroSeconds = 360f;   // >= this time gets zero bonus
+    public float timeBonusFullSeconds = 90f;    // <= this time gets the full bonus
+    public float timeBonusZeroSeconds = 360f;   // >= this time gets zero bonus (270s decay window)
     public int timeBonusMaxPoints = 50;
 
     [Header("Drone")]
