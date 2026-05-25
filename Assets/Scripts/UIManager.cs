@@ -36,6 +36,10 @@ public class UIManager : MonoBehaviour
 
     private Coroutine _popupCoroutine;
 
+    // Authoritative score relayed by the validator after submit; null until it arrives.
+    private double? _serverTotal;
+    private Coroutine _finalScoreFallback;
+
     private void Start()
     {
         UpdateUIState(GameManager.Instance.State);
@@ -86,6 +90,14 @@ public class UIManager : MonoBehaviour
 
         string popupMessage = GetChangedObjectiveText(score);
         _prevScore = score;
+
+        // The post-submit relay carries the authoritative leaderboard score.
+        if (score != null && score.final)
+        {
+            _serverTotal = score.total;
+            if (gameCompletedPanel.activeSelf)
+                finalScoreText.text = FormatFinalScore();
+        }
 
         if (popupMessage != null)
         {
@@ -150,12 +162,35 @@ public class UIManager : MonoBehaviour
         {
             float elapsed = GameManager.Instance.ElapsedTime;
             finalTimeText.text = $"FINAL TIME: {elapsed:F2}s";
-            finalScoreText.text = $"Total Score: {GameManager.Instance.finalScore} points";
+
+            // Score is authoritative from the server (relayed after submit). Show it once
+            // it arrives; until then a calculating state, with a fallback if it never does.
+            if (_serverTotal.HasValue)
+            {
+                finalScoreText.text = FormatFinalScore();
+            }
+            else
+            {
+                finalScoreText.text = "Total Score: calculating...";
+                if (_finalScoreFallback != null) StopCoroutine(_finalScoreFallback);
+                _finalScoreFallback = StartCoroutine(FinalScoreFallback());
+            }
         }
+    }
+
+    private string FormatFinalScore() => $"Total Score: {_serverTotal.Value:0.#} points";
+
+    private IEnumerator FinalScoreFallback()
+    {
+        yield return new WaitForSeconds(8f);
+        if (!_serverTotal.HasValue && gameCompletedPanel.activeSelf)
+            finalScoreText.text = "Score submitted - see the leaderboard";
+        _finalScoreFallback = null;
     }
 
     public void ResetGame()
     {
+        _serverTotal = null;
         GameManager.Instance.ResetGame();
         GameManager.Instance.StartGame();
     }
