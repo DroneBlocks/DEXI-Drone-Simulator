@@ -13,6 +13,14 @@ public class GameScoreUpdate
     public bool game_complete;
     public string elapsed_seconds;
     public string[] summary;
+
+    // Authoritative server result, relayed onto /game/score_update after submit.
+    // On live updates these are default (final == false); on the post-submit
+    // message final == true and total carries the leaderboard score.
+    public bool final;
+    public double total;
+    public double objective;
+    public double speed_bonus;
 }
 
 public class GameScoreSubscriber : MonoBehaviour, IROSSubscriber
