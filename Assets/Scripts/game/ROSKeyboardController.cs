@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 /// <summary>
 /// Sends keyboard or controller commands to the drone via ROS.
 ///
-/// Keyboard: T=takeoff, L=land, WASD=alt+yaw, Arrows=move, Space=free flight
+/// Keyboard: T=takeoff, L=land, WASD=alt+yaw, Arrows=move, Space=free flight (editor-only)
 /// Controllers: Selected via on-screen menu, read through browser Gamepad API (WebGL).
 /// </summary>
 public class ROSKeyboardController : MonoBehaviour
@@ -188,7 +188,8 @@ public class ROSKeyboardController : MonoBehaviour
         else
             browserGamepadIndex = -1;
 
-        // Space toggles free flight
+        // Space toggles free flight (editor-only; bypasses PX4 physics, not allowed in student/AVR builds)
+#if UNITY_EDITOR
         if (kb.spaceKey.wasPressedThisFrame)
         {
             freeFlightMode = !freeFlightMode;
@@ -197,6 +198,7 @@ public class ROSKeyboardController : MonoBehaviour
             if (droneRb != null)
                 droneRb.isKinematic = freeFlightMode;
         }
+#endif
 
         if (freeFlightMode && droneRb != null)
         {
@@ -392,6 +394,7 @@ public class ROSKeyboardController : MonoBehaviour
         small.normal.textColor = new Color(0.5f, 1f, 0.5f, 0.7f);
         float x = Screen.width - 300;
 
+#if UNITY_EDITOR
         if (freeFlightMode)
         {
             GUIStyle freeStyle = new GUIStyle(small) { fontSize = 14 };
@@ -400,6 +403,7 @@ public class ROSKeyboardController : MonoBehaviour
             GUI.Label(new Rect(x, 28, 290, 20), "Space: return to ROS", small);
             return;
         }
+#endif
 
         string presetName = activePreset == ControllerPreset.Keyboard ? "Keyboard" :
                             activePreset == ControllerPreset.Xbox ? "Xbox" : "Radiomaster";
